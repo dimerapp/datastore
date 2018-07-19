@@ -14,8 +14,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "elasticlunr": "^0.9.5",
     "fs-extra": "^6.0.1",
     "lodash": "^4.17.10",
+    "mdast-util-to-string": "^1.0.4",
     "ow": "^0.6.0",
     "steno": "^0.4.4"
   },
@@ -23,6 +25,8 @@
     "@adonisjs/mrm-preset": "^1.0.8",
     "commitizen": "^2.10.1",
     "cz-conventional-changelog": "^2.1.0",
+    "dedent": "^0.7.0",
+    "dimer-markdown": "file:../markdown",
     "japa": "^1.0.6",
     "japa-cli": "^1.0.1",
     "mrm": "^1.2.1",

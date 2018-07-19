@@ -13,6 +13,7 @@ const _ = require('lodash')
 const ow = require('ow')
 
 const Db = require('./Db')
+const Search = require('./Search')
 
 /**
  * A service to save website details, versions and related content
@@ -28,6 +29,7 @@ class MdServe {
     this.domain = domain
     this.baseDir = join(__dirname, '../sites', this.domain)
     this.db = new Db(join(this.baseDir, 'meta.json'))
+    this.searchJar = {}
   }
 
   /**
@@ -304,6 +306,64 @@ class MdServe {
    */
   getMetaData () {
     return _.omit(this.db.data, ['version'])
+  }
+
+  /**
+   * Returns the search class instance for a given version
+   *
+   * @method searchFor
+   *
+   * @param  {String}  versionNo
+   *
+   * @return {Search}
+   */
+  searchFor (versionNo) {
+    if (!this.searchJar[versionNo]) {
+      this.searchJar[versionNo] = new Search(join(this.baseDir, versionNo, 'search.json'))
+    }
+
+    return this.searchJar[versionNo]
+  }
+
+  /**
+   * Creates a search index for a given version
+   *
+   * @method indexVersion
+   *
+   * @param  {String}     versionNo
+   *
+   * @return {void}
+   */
+  async indexVersion (versionNo) {
+    const search = this.searchFor(versionNo)
+    const categories = await this.getDocs(versionNo, 0, true)
+
+    categories.forEach(({ docs }) => {
+      docs.forEach((doc) => {
+        search.addDoc(doc.content, doc.permalink)
+      })
+    })
+
+    await search.save()
+  }
+
+  /**
+   * Search content for a given term
+   *
+   * @method search
+   *
+   * @param  {String} versionNo
+   * @param  {String} term
+   *
+   * @return {Array}
+   */
+  async search (versionNo, term) {
+    const search = this.searchFor(versionNo)
+    if (!search.readIndex) {
+      await search.load()
+    }
+
+    return search.search(term)
   }
 }
 

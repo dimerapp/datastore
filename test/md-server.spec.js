@@ -10,6 +10,9 @@
 const fs = require('fs-extra')
 const { join } = require('path')
 const test = require('japa')
+const Markdown = require('dimer-markdown')
+const dedent = require('dedent')
+
 const MdServe = require('../src/MdServe')
 
 const domainDir = join(__dirname, '..', 'sites', 'adonisjs.dimerapp.com')
@@ -675,5 +678,102 @@ test.group('MdServe', (group) => {
       category: 'root',
       content: nodes
     })
+  })
+
+  test('index docs for a given version', async (assert) => {
+    const mdServe = new MdServe('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await mdServe.db.load()
+
+    const template = dedent`
+    Hello world
+
+    ## This is a section
+    Some content here
+    `
+
+    const fooFile = await new Markdown(template).toJSON()
+
+    await mdServe.saveDoc('1.0.0', 'foo.md', {
+      title: 'Hello world',
+      permalink: '/hello',
+      content: fooFile.contents
+    })
+
+    await mdServe.saveDoc('1.0.1', 'foo.md', {
+      title: 'Hello world',
+      permalink: '/hello',
+      content: fooFile.contents
+    })
+
+    await mdServe.indexVersion('1.0.0')
+    const indexFile = await fs.readJSON(join(domainDir, '1.0.0', 'search.json'))
+
+    assert.deepEqual(indexFile.documentStore.docs, {
+      '/hello#this-is-a-section': {
+        title: 'This is a section',
+        body: 'Some content here',
+        url: '/hello#this-is-a-section'
+      }
+    })
+
+    await mdServe.indexVersion('1.0.1')
+    const indexFile1 = await fs.readJSON(join(domainDir, '1.0.1', 'search.json'))
+
+    assert.deepEqual(indexFile1.documentStore.docs, {
+      '/hello#this-is-a-section': {
+        title: 'This is a section',
+        body: 'Some content here',
+        url: '/hello#this-is-a-section'
+      }
+    })
+  })
+
+  test('search docs for a given term', async (assert) => {
+    const mdServe = new MdServe('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await mdServe.db.load()
+
+    const template = dedent`
+    Hello world
+
+    ## Database
+    Database content
+    `
+
+    const template1 = dedent`
+    Hello world
+
+    ## Routing
+    Routing content
+    `
+
+    const fooFile = await new Markdown(template).toJSON()
+    const fooFile1 = await new Markdown(template1).toJSON()
+
+    await mdServe.saveDoc('1.0.0', 'foo.md', {
+      title: 'Hello world',
+      permalink: '/hello',
+      content: fooFile.contents
+    })
+
+    await mdServe.saveDoc('1.0.1', 'foo.md', {
+      title: 'Hello world',
+      permalink: '/hello',
+      content: fooFile1.contents
+    })
+
+    await mdServe.indexVersion('1.0.0')
+    await mdServe.indexVersion('1.0.1')
+
+    let dbSearch = await mdServe.search('1.0.0', 'Database')
+    let routingSearch = await mdServe.search('1.0.0', 'Routing')
+
+    assert.equal(dbSearch[0].ref, '/hello#database')
+    assert.deepEqual(routingSearch, [])
+
+    dbSearch = await mdServe.search('1.0.1', 'Database')
+    routingSearch = await mdServe.search('1.0.1', 'Routing')
+
+    assert.equal(routingSearch[0].ref, '/hello#routing')
+    assert.deepEqual(dbSearch, [])
   })
 })

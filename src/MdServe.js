@@ -281,6 +281,30 @@ class MdServe {
     const doc = version.docs.find((doc) => doc.permalink === permalink)
     return this.loadContent(versionNo, doc)
   }
+
+  /**
+   * Syncs meta data and saves it to the disk
+   *
+   * @method syncMetaData
+   *
+   * @param  {Object}     metaData
+   *
+   * @return {void}
+   */
+  async syncMetaData (metaData) {
+    return this.db.syncMetaData(metaData)
+  }
+
+  /**
+   * Returns the meta data for the website
+   *
+   * @method getMetaData
+   *
+   * @return {Object}
+   */
+  getMetaData () {
+    return _.omit(this.db.data, ['version'])
+  }
 }
 
 module.exports = MdServe

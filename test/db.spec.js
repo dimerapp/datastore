@@ -582,4 +582,37 @@ test.group('Db', (group) => {
 
     assert.isFalse(db.isFileValid())
   })
+
+  test('save website meta data', async (assert) => {
+    const db = new Db(dbFile, { autoload: false })
+
+    await db.load()
+    await db.syncMetaData({ domain: 'foo' })
+    const contents = await fs.readJSON(dbFile)
+
+    assert.deepEqual(contents, { domain: 'foo', versions: [] })
+  })
+
+  test('remove properties which are not part of new meta data', async (assert) => {
+    const db = new Db(dbFile, { autoload: false })
+    await fs.outputJSON(dbFile, {
+      themeSettings: {
+        headerBg: 'white'
+      },
+      versions: [
+        {
+          no: '1.0'
+        }
+      ]
+    })
+
+    await db.load()
+    await db.syncMetaData({ domain: 'foo' })
+    const contents = await fs.readJSON(dbFile)
+
+    assert.deepEqual(contents, {
+      domain: 'foo',
+      versions: [{ no: '1.0', default: false, depreciated: false, draft: false, name: '1.0', docs: [] }]
+    })
+  })
 })

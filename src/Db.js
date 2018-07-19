@@ -149,6 +149,25 @@ class Db {
   }
 
   /**
+   * Sync the meta data to the database
+   *
+   * @method syncMetaData
+   *
+   * @param  {Object}     metaData
+   * @param  {Boolean}    persist
+   *
+   * @return {void}
+   */
+  async syncMetaData (metaData, persist = true) {
+    ow(metaData, ow.object.label('metaData').hasKeys('domain'))
+    const versions = this.data.versions
+    this.data = _.omit(metaData, ['versions'])
+    this.data.versions = versions
+
+    await this.persist(persist)
+  }
+
+  /**
    * Saves a version with versionNo. This method will update the existing
    * row, if already exists.
    *

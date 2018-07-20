@@ -776,4 +776,41 @@ test.group('MdServe', (group) => {
     assert.equal(routingSearch[0].ref, '/hello#routing')
     assert.deepEqual(dbSearch, [])
   })
+
+  test('raise error when permalink is same', async (assert) => {
+    assert.plan(2)
+
+    const mdServe = new MdServe('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await mdServe.db.load()
+
+    await mdServe.saveDoc('1.0.0', 'foo.md', {
+      title: 'Hello',
+      permalink: '/hello',
+      category: 'root',
+      content: {
+        type: 'root',
+        children: [{}]
+      }
+    })
+
+    try {
+      await mdServe.saveDoc('1.0.0', 'foo.md', {
+        title: 'Hello',
+        permalink: '/hello',
+        category: 'root',
+        content: {
+          type: 'root',
+          children: [{}]
+        }
+      })
+    } catch ({ message, doc }) {
+      assert.equal(message, 'Duplicate permalink /hello')
+      assert.deepEqual(doc, {
+        category: 'root',
+        permalink: '/hello',
+        jsonPath: 'foo.json',
+        title: 'Hello'
+      })
+    }
+  })
 })

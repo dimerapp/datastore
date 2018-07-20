@@ -344,14 +344,14 @@ class Db {
   /**
    * Returns a specific doc for a given version
    *
-   * @method getDoc
+   * @method getDocByPermalink
    *
    * @param  {String} versionNo
    * @param  {String} permalink
    *
    * @return {Object|undefined}
    */
-  getDoc (versionNo, permalink) {
+  getDocByPermalink (versionNo, permalink) {
     this._ensureIsLoaded()
 
     ow(versionNo, ow.string.label('versionNo').nonEmpty)

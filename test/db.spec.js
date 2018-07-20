@@ -466,7 +466,7 @@ test.group('Db', (group) => {
 
     await db.load()
 
-    assert.deepEqual(db.getDoc('1.0.0', 'foo'), {
+    assert.deepEqual(db.getDocByPermalink('1.0.0', 'foo'), {
       permalink: 'foo',
       title: 'Foo',
       jsonPath: 'foo.json',
@@ -492,7 +492,7 @@ test.group('Db', (group) => {
     })
 
     await db.load()
-    assert.isUndefined(db.getDoc('1.0.1', 'foo'))
+    assert.isUndefined(db.getDocByPermalink('1.0.1', 'foo'))
   })
 
   test('return undefined when doc is missing', async (assert) => {
@@ -511,7 +511,7 @@ test.group('Db', (group) => {
     })
 
     await db.load()
-    assert.isUndefined(db.getDoc('1.0.0', 'bar'))
+    assert.isUndefined(db.getDocByPermalink('1.0.0', 'bar'))
   })
 
   test('return true from isFileValid when there are no versions', async (assert) => {

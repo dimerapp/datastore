@@ -79,6 +79,16 @@ class MdServe {
     ow(filePath, ow.string.label('filePath').nonEmpty)
     ow(doc, ow.object.label('doc').hasKeys('content', 'permalink'))
 
+    /**
+     * Make sure the permalink is not duplicate
+     */
+    const existingDoc = this.db.getDocByPermalink(versionNo, doc.permalink)
+    if (existingDoc) {
+      const error = new Error(`Duplicate permalink ${doc.permalink}`)
+      error.doc = existingDoc
+      throw error
+    }
+
     filePath = this._normalizePath(filePath)
 
     const metaData = _.reduce(doc, (result, value, key) => {

@@ -488,7 +488,7 @@ test.group('Datastore', (group) => {
       content: nodes
     })
 
-    const docs = await store.getDocs('1.0.0')
+    const docs = await store.getTree('1.0.0')
     assert.deepEqual(docs, [
       {
         category: 'root',
@@ -525,7 +525,7 @@ test.group('Datastore', (group) => {
       content: nodes
     })
 
-    const docs = await store.getDocs('1.0.0')
+    const docs = await store.getTree('1.0.0')
     assert.deepEqual(docs, [
       {
         category: 'root',
@@ -568,7 +568,7 @@ test.group('Datastore', (group) => {
       content: nodes
     })
 
-    const docs = await store.getDocs('1.0.0', 0, true)
+    const docs = await store.getTree('1.0.0', 0, true)
     assert.deepEqual(docs, [
       {
         category: 'root',
@@ -613,7 +613,7 @@ test.group('Datastore', (group) => {
       content: nodes
     })
 
-    const docs = await store.getDocs('1.0.0', 1, true)
+    const docs = await store.getTree('1.0.0', 1, true)
     assert.deepEqual(docs, [
       {
         category: 'root',

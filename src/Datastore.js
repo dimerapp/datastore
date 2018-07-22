@@ -195,7 +195,7 @@ class Datastore {
   /**
    * Returns an array of docs nested under categories
    *
-   * @method getDocs
+   * @method getTree
    *
    * @param  {String}  versionNo
    * @param  {Boolean} [limit = 0]
@@ -203,7 +203,7 @@ class Datastore {
    *
    * @return {Array}
    */
-  async getDocs (versionNo, limit = 0, withContent = false) {
+  async getTree (versionNo, limit = 0, withContent = false) {
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
 
     const version = this.db.getVersion(versionNo)
@@ -345,7 +345,7 @@ class Datastore {
    */
   async indexVersion (versionNo) {
     const search = this.searchFor(versionNo)
-    const categories = await this.getDocs(versionNo, 0, true)
+    const categories = await this.getTree(versionNo, 0, true)
 
     categories.forEach(({ docs }) => {
       docs.forEach((doc) => {

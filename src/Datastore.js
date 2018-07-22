@@ -322,12 +322,13 @@ class Datastore {
    *
    * @method searchFor
    *
-   * @param  {String}  versionNo
+   * @param  {String}   versionNo
+   * @param  {Boolean}  forceNew
    *
    * @return {Search}
    */
-  searchFor (versionNo) {
-    if (!this.searchJar[versionNo]) {
+  searchFor (versionNo, forceNew = false) {
+    if (!this.searchJar[versionNo] || forceNew) {
       this.searchJar[versionNo] = new Search(join(this.baseDir, versionNo, 'search.json'))
     }
 
@@ -344,7 +345,7 @@ class Datastore {
    * @return {void}
    */
   async indexVersion (versionNo) {
-    const search = this.searchFor(versionNo)
+    const search = this.searchFor(versionNo, true)
     const categories = await this.getTree(versionNo, 0, true)
 
     categories.forEach(({ docs }) => {

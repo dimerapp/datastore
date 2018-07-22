@@ -863,4 +863,32 @@ test.group('Datastore', (group) => {
       ]
     })
   })
+
+  test('indexing version should start from scratch', async (assert) => {
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
+
+    const template = dedent`
+    Hello world
+
+    ## Database
+    Database content
+    `
+
+    const fooFile = await new Markdown(template).toJSON()
+
+    await store.saveDoc('1.0.0', 'foo.md', {
+      title: 'Hello world',
+      permalink: '/hello',
+      content: fooFile.contents
+    })
+
+    await store.indexVersion('1.0.0')
+
+    await store.removeDoc('1.0.0', 'foo.md')
+    await store.indexVersion('1.0.0')
+
+    let search = await store.search('1.0.0', 'Database')
+    assert.deepEqual(search, [])
+  })
 })

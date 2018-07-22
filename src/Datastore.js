@@ -33,6 +33,23 @@ class Datastore {
   }
 
   /**
+   * Removes trailing and leading slashes from the permalink. This
+   * should always be done when matching permalinks, and do not
+   * mutate the value of permalink saved by the end user.
+   *
+   * @method _normalizePermalink
+   *
+   * @param  {String}            permalink
+   *
+   * @return {String}
+   *
+   * @private
+   */
+  _normalizePermalink (permalink) {
+    return permalink.replace(/^\/|\/$/, '')
+  }
+
+  /**
    * Returns the title node from the content nodes
    *
    * @method _getTitle
@@ -289,8 +306,43 @@ class Datastore {
       return null
     }
 
-    const doc = version.docs.find((doc) => doc.permalink === permalink)
+    const doc = version.docs.find((doc) => {
+      return this._normalizePermalink(doc.permalink) === this._normalizePermalink(permalink)
+    })
+
     return this.loadContent(versionNo, doc)
+  }
+
+  /**
+   * Returns the permalink at which the doc must be redirected. If
+   * there are no redirects then `null` is returned
+   *
+   * @method redirectedPermalink
+   *
+   * @param  {String}            versionNo
+   * @param  {String}            permalink
+   *
+   * @return {String|Null}
+   */
+  redirectedPermalink (versionNo, permalink) {
+    ow(versionNo, ow.string.label('versionNo').nonEmpty)
+    ow(permalink, ow.string.label('permalink').nonEmpty)
+
+    const version = this.db.getVersion(versionNo)
+
+    if (!version) {
+      return null
+    }
+
+    const doc = version.docs.find((doc) => {
+      return _.includes(doc.redirects.map(this._normalizePermalink.bind(this)), this._normalizePermalink(permalink))
+    })
+
+    if (!doc) {
+      return null
+    }
+
+    return doc.permalink
   }
 
   /**

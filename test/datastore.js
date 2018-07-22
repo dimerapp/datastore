@@ -891,4 +891,28 @@ test.group('Datastore', (group) => {
     let search = await store.search('1.0.0', 'Database')
     assert.deepEqual(search, [])
   })
+
+  test('get the permalink of the actual doc when redirected permalink is accessed', async (assert) => {
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
+
+    const template = dedent`
+    Hello world
+
+    ## Database
+    Database content
+    `
+
+    const fooFile = await new Markdown(template).toJSON()
+
+    await store.saveDoc('1.0.0', 'foo.md', {
+      title: 'Hello world',
+      permalink: '/hello',
+      content: fooFile.contents,
+      redirects: ['/hel', '/helo']
+    })
+
+    const redirectTo = store.redirectedPermalink('1.0.0', 'hel')
+    assert.equal(redirectTo, '/hello')
+  })
 })

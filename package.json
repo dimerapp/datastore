@@ -2,7 +2,7 @@
   "name": "md-serve",
   "version": "1.0.0",
   "description": "",
-  "main": "src/MdServe.js",
+  "main": "src/Datastore.js",
   "scripts": {
     "pretest": "npm run lint",
     "test": "japa",
@@ -12,7 +12,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "elasticlunr": "^0.9.5",
     "fs-extra": "^6.0.1",

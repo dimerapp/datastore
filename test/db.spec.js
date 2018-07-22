@@ -600,7 +600,7 @@ test.group('Db', (group) => {
         headerBg: 'white',
         emojis: {
           smile: ':smile:',
-          joy: ':joy:',
+          joy: ':joy:'
         }
       },
       versions: [

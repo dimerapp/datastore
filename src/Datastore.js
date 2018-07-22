@@ -296,24 +296,24 @@ class Datastore {
   /**
    * Syncs meta data and saves it to the disk
    *
-   * @method syncMetaData
+   * @method syncConfig
    *
    * @param  {Object}     metaData
    *
    * @return {void}
    */
-  async syncMetaData (metaData) {
+  async syncConfig (metaData) {
     return this.db.syncMetaData(metaData)
   }
 
   /**
    * Returns the meta data for the website
    *
-   * @method getMetaData
+   * @method getConfig
    *
    * @return {Object}
    */
-  getMetaData () {
+  getConfig () {
     return _.omit(this.db.data, ['version'])
   }
 

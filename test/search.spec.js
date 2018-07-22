@@ -10,7 +10,7 @@
 const test = require('japa')
 const { join } = require('path')
 const fs = require('fs-extra')
-const Markdown = require('dimer-markdown')
+const Markdown = require('@dimerapp/markdown')
 const dedent = require('dedent')
 
 const Search = require('../src/Search')

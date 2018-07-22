@@ -13,11 +13,11 @@ const test = require('japa')
 const Markdown = require('dimer-markdown')
 const dedent = require('dedent')
 
-const MdServe = require('../src/MdServe')
+const Datastore = require('../src/Datastore')
 
 const domainDir = join(__dirname, '..', 'sites', 'adonisjs.dimerapp.com')
 
-test.group('MdServe', (group) => {
+test.group('Datastore', (group) => {
   group.afterEach(async () => {
     await fs.remove(domainDir)
   })
@@ -25,20 +25,20 @@ test.group('MdServe', (group) => {
   test('raise error when versionNo or fileName is missing when saving doc', async (assert) => {
     assert.plan(1)
 
-    const mdServe = new MdServe('adonisjs.dimerapp.com', 'http://localhost:3000')
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
 
     try {
-      await mdServe.saveDoc()
+      await store.saveDoc()
     } catch ({ message }) {
       assert.equal(message, 'Expected `versionNo` to be of type `string` but received type `undefined`')
     }
   })
 
   test('save markdown json and it\'s meta data to the disk', async (assert) => {
-    const mdServe = new MdServe('adonisjs.dimerapp.com', 'http://localhost:3000')
-    await mdServe.db.load()
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
 
-    await mdServe.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('1.0.0', 'foo.md', {
       title: 'Hello',
       permalink: '/hello',
       category: 'root',
@@ -74,8 +74,8 @@ test.group('MdServe', (group) => {
   })
 
   test('pull title from json when is not inside meta data', async (assert) => {
-    const mdServe = new MdServe('adonisjs.dimerapp.com', 'http://localhost:3000')
-    await mdServe.db.load()
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
 
     const nodes = {
       type: 'root',
@@ -88,7 +88,7 @@ test.group('MdServe', (group) => {
       ]
     }
 
-    await mdServe.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('1.0.0', 'foo.md', {
       permalink: '/hello',
       category: 'root',
       content: nodes
@@ -120,15 +120,15 @@ test.group('MdServe', (group) => {
   })
 
   test('set category to root when is not inside meta data', async (assert) => {
-    const mdServe = new MdServe('adonisjs.dimerapp.com', 'http://localhost:3000')
-    await mdServe.db.load()
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
 
     const nodes = {
       type: 'root',
       children: [{}]
     }
 
-    await mdServe.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
@@ -160,10 +160,10 @@ test.group('MdServe', (group) => {
   })
 
   test('sync versions', async (assert) => {
-    const mdServe = new MdServe('adonisjs.dimerapp.com', 'http://localhost:3000')
-    await mdServe.db.load()
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
 
-    await mdServe.syncVersions([
+    await store.syncVersions([
       {
         no: '1.0.0'
       },
@@ -197,21 +197,21 @@ test.group('MdServe', (group) => {
   })
 
   test('sync versions with existing content should work fine', async (assert) => {
-    const mdServe = new MdServe('adonisjs.dimerapp.com', 'http://localhost:3000')
-    await mdServe.db.load()
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
 
     const nodes = {
       type: 'root',
       children: [{}]
     }
 
-    await mdServe.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    await mdServe.syncVersions([
+    await store.syncVersions([
       {
         no: '1.0.0',
         name: 'Version 1'
@@ -253,27 +253,27 @@ test.group('MdServe', (group) => {
   })
 
   test('sync versions should remove the one\'s not inside the array', async (assert) => {
-    const mdServe = new MdServe('adonisjs.dimerapp.com', 'http://localhost:3000')
-    await mdServe.db.load()
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
 
     const nodes = {
       type: 'root',
       children: [{}]
     }
 
-    await mdServe.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    await mdServe.saveDoc('1.0.1', 'foo.md', {
+    await store.saveDoc('1.0.1', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    await mdServe.syncVersions([
+    await store.syncVersions([
       {
         no: '1.0.0',
         name: 'Version 1'
@@ -303,21 +303,21 @@ test.group('MdServe', (group) => {
   })
 
   test('sync versions should remove the content for one\'s not inside the array', async (assert) => {
-    const mdServe = new MdServe('adonisjs.dimerapp.com', 'http://localhost:3000')
-    await mdServe.db.load()
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
 
     const nodes = {
       type: 'root',
       children: [{}]
     }
 
-    await mdServe.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    await mdServe.saveDoc('1.0.1', 'foo.md', {
+    await store.saveDoc('1.0.1', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
@@ -328,7 +328,7 @@ test.group('MdServe', (group) => {
     assert.isTrue(v1)
     assert.isTrue(v2)
 
-    await mdServe.syncVersions([
+    await store.syncVersions([
       {
         no: '1.0.0',
         name: 'Version 1'
@@ -363,21 +363,21 @@ test.group('MdServe', (group) => {
   })
 
   test('remove a given doc', async (assert) => {
-    const mdServe = new MdServe('adonisjs.dimerapp.com', 'http://localhost:3000')
-    await mdServe.db.load()
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
 
     const nodes = {
       type: 'root',
       children: [{}]
     }
 
-    await mdServe.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    await mdServe.removeDoc('1.0.0', 'foo.md')
+    await store.removeDoc('1.0.0', 'foo.md')
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
     const foo = await fs.pathExists(join(domainDir, '1.0.0', 'foo.json'))
@@ -398,21 +398,21 @@ test.group('MdServe', (group) => {
   })
 
   test('skip when removing doc for a non-existing version', async (assert) => {
-    const mdServe = new MdServe('adonisjs.dimerapp.com', 'http://localhost:3000')
-    await mdServe.db.load()
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
 
     const nodes = {
       type: 'root',
       children: [{}]
     }
 
-    await mdServe.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    await mdServe.removeDoc('1.0.1', 'foo.md')
+    await store.removeDoc('1.0.1', 'foo.md')
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
     const foo = await fs.pathExists(join(domainDir, '1.0.0', 'foo.json'))
@@ -440,21 +440,21 @@ test.group('MdServe', (group) => {
   })
 
   test('return an array of versions', async (assert) => {
-    const mdServe = new MdServe('adonisjs.dimerapp.com', 'http://localhost:3000')
-    await mdServe.db.load()
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
 
     const nodes = {
       type: 'root',
       children: [{}]
     }
 
-    await mdServe.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    const versions = mdServe.getVersions()
+    const versions = store.getVersions()
 
     assert.deepEqual(versions, [
       {
@@ -474,21 +474,21 @@ test.group('MdServe', (group) => {
   })
 
   test('get docs for an array of version', async (assert) => {
-    const mdServe = new MdServe('adonisjs.dimerapp.com', 'http://localhost:3000')
-    await mdServe.db.load()
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
 
     const nodes = {
       type: 'root',
       children: [{}]
     }
 
-    await mdServe.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    const docs = await mdServe.getDocs('1.0.0')
+    const docs = await store.getTree('1.0.0')
     assert.deepEqual(docs, [
       {
         category: 'root',
@@ -505,27 +505,27 @@ test.group('MdServe', (group) => {
   })
 
   test('order versions by jsonPath', async (assert) => {
-    const mdServe = new MdServe('adonisjs.dimerapp.com', 'http://localhost:3000')
-    await mdServe.db.load()
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
 
     const nodes = {
       type: 'root',
       children: [{}]
     }
 
-    await mdServe.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    await mdServe.saveDoc('1.0.0', 'bar.md', {
+    await store.saveDoc('1.0.0', 'bar.md', {
       title: 'Hello world',
       permalink: '/bar',
       content: nodes
     })
 
-    const docs = await mdServe.getDocs('1.0.0')
+    const docs = await store.getTree('1.0.0')
     assert.deepEqual(docs, [
       {
         category: 'root',
@@ -548,27 +548,27 @@ test.group('MdServe', (group) => {
   })
 
   test('load content for docs', async (assert) => {
-    const mdServe = new MdServe('adonisjs.dimerapp.com', 'http://localhost:3000')
-    await mdServe.db.load()
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
 
     const nodes = {
       type: 'root',
       children: [{}]
     }
 
-    await mdServe.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    await mdServe.saveDoc('1.0.0', 'bar.md', {
+    await store.saveDoc('1.0.0', 'bar.md', {
       title: 'Hello world',
       permalink: '/bar',
       content: nodes
     })
 
-    const docs = await mdServe.getDocs('1.0.0', 0, true)
+    const docs = await store.getTree('1.0.0', 0, true)
     assert.deepEqual(docs, [
       {
         category: 'root',
@@ -593,27 +593,27 @@ test.group('MdServe', (group) => {
   })
 
   test('limit docs', async (assert) => {
-    const mdServe = new MdServe('adonisjs.dimerapp.com', 'http://localhost:3000')
-    await mdServe.db.load()
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
 
     const nodes = {
       type: 'root',
       children: [{}]
     }
 
-    await mdServe.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    await mdServe.saveDoc('1.0.0', 'bar.md', {
+    await store.saveDoc('1.0.0', 'bar.md', {
       title: 'Hello world',
       permalink: '/bar',
       content: nodes
     })
 
-    const docs = await mdServe.getDocs('1.0.0', 1, true)
+    const docs = await store.getTree('1.0.0', 1, true)
     assert.deepEqual(docs, [
       {
         category: 'root',
@@ -631,21 +631,21 @@ test.group('MdServe', (group) => {
   })
 
   test('get a single doc', async (assert) => {
-    const mdServe = new MdServe('adonisjs.dimerapp.com', 'http://localhost:3000')
-    await mdServe.db.load()
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
 
     const nodes = {
       type: 'root',
       children: [{}]
     }
 
-    await mdServe.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    const doc = await mdServe.getDoc('1.0.0', 'foo.json')
+    const doc = await store.getDoc('1.0.0', 'foo.json')
     assert.deepEqual(doc, {
       jsonPath: 'foo.json',
       title: 'Hello world',
@@ -656,21 +656,21 @@ test.group('MdServe', (group) => {
   })
 
   test('get a single doc by permalink', async (assert) => {
-    const mdServe = new MdServe('adonisjs.dimerapp.com', 'http://localhost:3000')
-    await mdServe.db.load()
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
 
     const nodes = {
       type: 'root',
       children: [{}]
     }
 
-    await mdServe.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    const doc = await mdServe.getDocByPermalink('1.0.0', '/hello')
+    const doc = await store.getDocByPermalink('1.0.0', '/hello')
     assert.deepEqual(doc, {
       jsonPath: 'foo.json',
       title: 'Hello world',
@@ -681,8 +681,8 @@ test.group('MdServe', (group) => {
   })
 
   test('index docs for a given version', async (assert) => {
-    const mdServe = new MdServe('adonisjs.dimerapp.com', 'http://localhost:3000')
-    await mdServe.db.load()
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
 
     const template = dedent`
     Hello world
@@ -693,19 +693,19 @@ test.group('MdServe', (group) => {
 
     const fooFile = await new Markdown(template).toJSON()
 
-    await mdServe.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: fooFile.contents
     })
 
-    await mdServe.saveDoc('1.0.1', 'foo.md', {
+    await store.saveDoc('1.0.1', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: fooFile.contents
     })
 
-    await mdServe.indexVersion('1.0.0')
+    await store.indexVersion('1.0.0')
     const indexFile = await fs.readJSON(join(domainDir, '1.0.0', 'search.json'))
 
     assert.deepEqual(indexFile.documentStore.docs, {
@@ -716,7 +716,7 @@ test.group('MdServe', (group) => {
       }
     })
 
-    await mdServe.indexVersion('1.0.1')
+    await store.indexVersion('1.0.1')
     const indexFile1 = await fs.readJSON(join(domainDir, '1.0.1', 'search.json'))
 
     assert.deepEqual(indexFile1.documentStore.docs, {
@@ -729,8 +729,8 @@ test.group('MdServe', (group) => {
   })
 
   test('search docs for a given term', async (assert) => {
-    const mdServe = new MdServe('adonisjs.dimerapp.com', 'http://localhost:3000')
-    await mdServe.db.load()
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
 
     const template = dedent`
     Hello world
@@ -749,29 +749,29 @@ test.group('MdServe', (group) => {
     const fooFile = await new Markdown(template).toJSON()
     const fooFile1 = await new Markdown(template1).toJSON()
 
-    await mdServe.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: fooFile.contents
     })
 
-    await mdServe.saveDoc('1.0.1', 'foo.md', {
+    await store.saveDoc('1.0.1', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: fooFile1.contents
     })
 
-    await mdServe.indexVersion('1.0.0')
-    await mdServe.indexVersion('1.0.1')
+    await store.indexVersion('1.0.0')
+    await store.indexVersion('1.0.1')
 
-    let dbSearch = await mdServe.search('1.0.0', 'Database')
-    let routingSearch = await mdServe.search('1.0.0', 'Routing')
+    let dbSearch = await store.search('1.0.0', 'Database')
+    let routingSearch = await store.search('1.0.0', 'Routing')
 
     assert.equal(dbSearch[0].ref, '/hello#database')
     assert.deepEqual(routingSearch, [])
 
-    dbSearch = await mdServe.search('1.0.1', 'Database')
-    routingSearch = await mdServe.search('1.0.1', 'Routing')
+    dbSearch = await store.search('1.0.1', 'Database')
+    routingSearch = await store.search('1.0.1', 'Routing')
 
     assert.equal(routingSearch[0].ref, '/hello#routing')
     assert.deepEqual(dbSearch, [])
@@ -780,10 +780,10 @@ test.group('MdServe', (group) => {
   test('raise error when permalink is same', async (assert) => {
     assert.plan(2)
 
-    const mdServe = new MdServe('adonisjs.dimerapp.com', 'http://localhost:3000')
-    await mdServe.db.load()
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
 
-    await mdServe.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('1.0.0', 'foo.md', {
       title: 'Hello',
       permalink: '/hello',
       category: 'root',
@@ -794,7 +794,7 @@ test.group('MdServe', (group) => {
     })
 
     try {
-      await mdServe.saveDoc('1.0.0', 'foo.md', {
+      await store.saveDoc('1.0.0', 'bar.md', {
         title: 'Hello',
         permalink: '/hello',
         category: 'root',
@@ -812,5 +812,132 @@ test.group('MdServe', (group) => {
         title: 'Hello'
       })
     }
+  })
+
+  test('work fine when updating doc with same permalink', async (assert) => {
+    assert.plan(2)
+
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
+
+    const nodes = {
+      type: 'root',
+      children: [{}]
+    }
+
+    await store.saveDoc('1.0.0', 'foo.md', {
+      title: 'Hello',
+      permalink: '/hello',
+      category: 'root',
+      content: nodes
+    })
+
+    await store.saveDoc('1.0.0', 'foo.md', {
+      title: 'Updated Title',
+      permalink: '/hello',
+      category: 'root',
+      content: nodes
+    })
+
+    const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
+    const doc = await fs.readJSON(join(domainDir, '1.0.0', 'foo.json'))
+
+    assert.deepEqual(doc, nodes)
+    assert.deepEqual(metaFile, {
+      versions: [
+        {
+          default: false,
+          depreciated: false,
+          draft: false,
+          name: '1.0.0',
+          no: '1.0.0',
+          docs: [
+            {
+              category: 'root',
+              jsonPath: 'foo.json',
+              permalink: '/hello',
+              title: 'Updated Title'
+            }
+          ]
+        }
+      ]
+    })
+  })
+
+  test('indexing version should start from scratch', async (assert) => {
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
+
+    const template = dedent`
+    Hello world
+
+    ## Database
+    Database content
+    `
+
+    const fooFile = await new Markdown(template).toJSON()
+
+    await store.saveDoc('1.0.0', 'foo.md', {
+      title: 'Hello world',
+      permalink: '/hello',
+      content: fooFile.contents
+    })
+
+    await store.indexVersion('1.0.0')
+
+    await store.removeDoc('1.0.0', 'foo.md')
+    await store.indexVersion('1.0.0')
+
+    let search = await store.search('1.0.0', 'Database')
+    assert.deepEqual(search, [])
+  })
+
+  test('get the permalink of the actual doc when redirected permalink is accessed', async (assert) => {
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
+
+    const template = dedent`
+    Hello world
+
+    ## Database
+    Database content
+    `
+
+    const fooFile = await new Markdown(template).toJSON()
+
+    await store.saveDoc('1.0.0', 'foo.md', {
+      title: 'Hello world',
+      permalink: '/hello',
+      content: fooFile.contents,
+      redirects: ['/hel', '/helo']
+    })
+
+    const redirectTo = store.redirectedPermalink('1.0.0', 'hel')
+    assert.equal(redirectTo, '/hello')
+  })
+
+  test('get a single doc by permalink by normalizing slashes', async (assert) => {
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
+
+    const nodes = {
+      type: 'root',
+      children: [{}]
+    }
+
+    await store.saveDoc('1.0.0', 'foo.md', {
+      title: 'Hello world',
+      permalink: '/hello',
+      content: nodes
+    })
+
+    const doc = await store.getDocByPermalink('1.0.0', 'hello')
+    assert.deepEqual(doc, {
+      jsonPath: 'foo.json',
+      title: 'Hello world',
+      permalink: '/hello',
+      category: 'root',
+      content: nodes
+    })
   })
 })

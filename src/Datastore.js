@@ -18,11 +18,11 @@ const Search = require('./Search')
 /**
  * A service to save website details, versions and related content
  *
- * @class MdServer
+ * @class Datastore
  *
  * @param {String} domain
  */
-class MdServe {
+class Datastore {
   constructor (domain) {
     ow(domain, ow.string.label('domain').nonEmpty)
 
@@ -30,6 +30,23 @@ class MdServe {
     this.baseDir = join(__dirname, '../sites', this.domain)
     this.db = new Db(join(this.baseDir, 'meta.json'))
     this.searchJar = {}
+  }
+
+  /**
+   * Removes trailing and leading slashes from the permalink. This
+   * should always be done when matching permalinks, and do not
+   * mutate the value of permalink saved by the end user.
+   *
+   * @method _normalizePermalink
+   *
+   * @param  {String}            permalink
+   *
+   * @return {String}
+   *
+   * @private
+   */
+  _normalizePermalink (permalink) {
+    return permalink.replace(/^\/|\/$/, '')
   }
 
   /**
@@ -78,18 +95,17 @@ class MdServe {
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
     ow(filePath, ow.string.label('filePath').nonEmpty)
     ow(doc, ow.object.label('doc').hasKeys('content', 'permalink'))
+    filePath = this._normalizePath(filePath)
 
     /**
      * Make sure the permalink is not duplicate
      */
     const existingDoc = this.db.getDocByPermalink(versionNo, doc.permalink)
-    if (existingDoc) {
+    if (existingDoc && existingDoc.jsonPath !== filePath) {
       const error = new Error(`Duplicate permalink ${doc.permalink}`)
       error.doc = existingDoc
       throw error
     }
-
-    filePath = this._normalizePath(filePath)
 
     const metaData = _.reduce(doc, (result, value, key) => {
       if (key !== 'content') {
@@ -196,7 +212,7 @@ class MdServe {
   /**
    * Returns an array of docs nested under categories
    *
-   * @method getDocs
+   * @method getTree
    *
    * @param  {String}  versionNo
    * @param  {Boolean} [limit = 0]
@@ -204,7 +220,7 @@ class MdServe {
    *
    * @return {Array}
    */
-  async getDocs (versionNo, limit = 0, withContent = false) {
+  async getTree (versionNo, limit = 0, withContent = false) {
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
 
     const version = this.db.getVersion(versionNo)
@@ -290,31 +306,66 @@ class MdServe {
       return null
     }
 
-    const doc = version.docs.find((doc) => doc.permalink === permalink)
+    const doc = version.docs.find((doc) => {
+      return this._normalizePermalink(doc.permalink) === this._normalizePermalink(permalink)
+    })
+
     return this.loadContent(versionNo, doc)
+  }
+
+  /**
+   * Returns the permalink at which the doc must be redirected. If
+   * there are no redirects then `null` is returned
+   *
+   * @method redirectedPermalink
+   *
+   * @param  {String}            versionNo
+   * @param  {String}            permalink
+   *
+   * @return {String|Null}
+   */
+  redirectedPermalink (versionNo, permalink) {
+    ow(versionNo, ow.string.label('versionNo').nonEmpty)
+    ow(permalink, ow.string.label('permalink').nonEmpty)
+
+    const version = this.db.getVersion(versionNo)
+
+    if (!version) {
+      return null
+    }
+
+    const doc = version.docs.find((doc) => {
+      return _.includes(doc.redirects.map(this._normalizePermalink.bind(this)), this._normalizePermalink(permalink))
+    })
+
+    if (!doc) {
+      return null
+    }
+
+    return doc.permalink
   }
 
   /**
    * Syncs meta data and saves it to the disk
    *
-   * @method syncMetaData
+   * @method syncConfig
    *
    * @param  {Object}     metaData
    *
    * @return {void}
    */
-  async syncMetaData (metaData) {
+  async syncConfig (metaData) {
     return this.db.syncMetaData(metaData)
   }
 
   /**
    * Returns the meta data for the website
    *
-   * @method getMetaData
+   * @method getConfig
    *
    * @return {Object}
    */
-  getMetaData () {
+  getConfig () {
     return _.omit(this.db.data, ['version'])
   }
 
@@ -323,12 +374,13 @@ class MdServe {
    *
    * @method searchFor
    *
-   * @param  {String}  versionNo
+   * @param  {String}   versionNo
+   * @param  {Boolean}  forceNew
    *
    * @return {Search}
    */
-  searchFor (versionNo) {
-    if (!this.searchJar[versionNo]) {
+  searchFor (versionNo, forceNew = false) {
+    if (!this.searchJar[versionNo] || forceNew) {
       this.searchJar[versionNo] = new Search(join(this.baseDir, versionNo, 'search.json'))
     }
 
@@ -345,8 +397,8 @@ class MdServe {
    * @return {void}
    */
   async indexVersion (versionNo) {
-    const search = this.searchFor(versionNo)
-    const categories = await this.getDocs(versionNo, 0, true)
+    const search = this.searchFor(versionNo, true)
+    const categories = await this.getTree(versionNo, 0, true)
 
     categories.forEach(({ docs }) => {
       docs.forEach((doc) => {
@@ -377,4 +429,4 @@ class MdServe {
   }
 }
 
-module.exports = MdServe
+module.exports = Datastore

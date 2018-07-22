@@ -915,4 +915,29 @@ test.group('Datastore', (group) => {
     const redirectTo = store.redirectedPermalink('1.0.0', 'hel')
     assert.equal(redirectTo, '/hello')
   })
+
+  test('get a single doc by permalink by normalizing slashes', async (assert) => {
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
+
+    const nodes = {
+      type: 'root',
+      children: [{}]
+    }
+
+    await store.saveDoc('1.0.0', 'foo.md', {
+      title: 'Hello world',
+      permalink: '/hello',
+      content: nodes
+    })
+
+    const doc = await store.getDocByPermalink('1.0.0', 'hello')
+    assert.deepEqual(doc, {
+      jsonPath: 'foo.json',
+      title: 'Hello world',
+      permalink: '/hello',
+      category: 'root',
+      content: nodes
+    })
+  })
 })

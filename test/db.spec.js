@@ -597,7 +597,11 @@ test.group('Db', (group) => {
     const db = new Db(dbFile, { autoload: false })
     await fs.outputJSON(dbFile, {
       themeSettings: {
-        headerBg: 'white'
+        headerBg: 'white',
+        emojis: {
+          smile: ':smile:',
+          joy: ':joy:',
+        }
       },
       versions: [
         {
@@ -607,11 +611,23 @@ test.group('Db', (group) => {
     })
 
     await db.load()
-    await db.syncMetaData({ domain: 'foo' })
+    await db.syncMetaData({
+      domain: 'foo',
+      themeSettings: {
+        emojis: {
+          smile: ':smile:'
+        }
+      }
+    })
     const contents = await fs.readJSON(dbFile)
 
     assert.deepEqual(contents, {
       domain: 'foo',
+      themeSettings: {
+        emojis: {
+          smile: ':smile:'
+        }
+      },
       versions: [{ no: '1.0', default: false, depreciated: false, draft: false, name: '1.0', docs: [] }]
     })
   })

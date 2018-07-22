@@ -1,7 +1,7 @@
 {
   "core": false,
   "ts": false,
-  "license": "Unlicense",
+  "license": "MIT",
   "services": [
     "travis"
   ],

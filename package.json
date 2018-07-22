@@ -1,8 +1,11 @@
 {
-  "name": "md-serve",
+  "name": "@dimerapp/datastore",
   "version": "1.0.0",
-  "description": "",
+  "description": "Datastore to store dimer websites as JSON",
   "main": "src/Datastore.js",
+  "files": [
+    "src"
+  ],
   "scripts": {
     "pretest": "npm run lint",
     "test": "japa",
@@ -11,7 +14,7 @@
     "lint": "standard"
   },
   "keywords": [],
-  "author": "",
+  "author": "virk",
   "license": "MIT",
   "dependencies": {
     "elasticlunr": "^0.9.5",
@@ -43,5 +46,16 @@
       "test",
       "japaFile.js"
     ]
-  }
+  },
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dimerapp/datastore.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dimerapp/datastore/issues"
+  },
+  "homepage": "https://github.com/dimerapp/datastore#readme"
 }

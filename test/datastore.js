@@ -48,6 +48,8 @@ test.group('Datastore', (group) => {
       }
     })
 
+    await store.persist()
+
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
     const doc = await fs.readJSON(join(domainDir, '1.0.0', 'foo.json'))
 
@@ -93,6 +95,7 @@ test.group('Datastore', (group) => {
       category: 'root',
       content: nodes
     })
+    await store.persist()
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
     const doc = await fs.readJSON(join(domainDir, '1.0.0', 'foo.json'))
@@ -134,6 +137,8 @@ test.group('Datastore', (group) => {
       content: nodes
     })
 
+    await store.persist()
+
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
     const doc = await fs.readJSON(join(domainDir, '1.0.0', 'foo.json'))
 
@@ -172,6 +177,8 @@ test.group('Datastore', (group) => {
         default: true
       }
     ])
+
+    await store.persist()
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
     assert.deepEqual(metaFile, {
@@ -221,6 +228,8 @@ test.group('Datastore', (group) => {
         default: true
       }
     ])
+
+    await store.persist()
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
     assert.deepEqual(metaFile, {
@@ -280,6 +289,8 @@ test.group('Datastore', (group) => {
       }
     ])
 
+    await store.persist()
+
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
     assert.deepEqual(metaFile, {
       versions: [
@@ -335,6 +346,8 @@ test.group('Datastore', (group) => {
       }
     ])
 
+    await store.persist()
+
     v1 = await fs.pathExists(join(domainDir, '1.0.0', 'foo.json'))
     v2 = await fs.pathExists(join(domainDir, '1.0.1', 'foo.json'))
     assert.isTrue(v1)
@@ -378,6 +391,7 @@ test.group('Datastore', (group) => {
     })
 
     await store.removeDoc('1.0.0', 'foo.md')
+    await store.persist()
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
     const foo = await fs.pathExists(join(domainDir, '1.0.0', 'foo.json'))
@@ -413,6 +427,7 @@ test.group('Datastore', (group) => {
     })
 
     await store.removeDoc('1.0.1', 'foo.md')
+    await store.persist()
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
     const foo = await fs.pathExists(join(domainDir, '1.0.0', 'foo.json'))
@@ -838,6 +853,8 @@ test.group('Datastore', (group) => {
       category: 'root',
       content: nodes
     })
+
+    await store.persist()
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
     const doc = await fs.readJSON(join(domainDir, '1.0.0', 'foo.json'))

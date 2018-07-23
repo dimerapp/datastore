@@ -10,7 +10,7 @@ const fs = require('fs-extra')
 const steno = require('steno')
 const _ = require('lodash')
 const ow = require('ow')
-const ChangeSet = require('./ChangeSet')
+// const ChangeSet = require('./ChangeSet')
 
 /**
  * The database for storing everything on disk
@@ -25,6 +25,8 @@ class Db {
     this.filePath = filePath
     this.onReady = typeof (options.onReady) === 'function' ? options.onReady : function () {}
     this.data = { versions: [] }
+    this.persisted = {}
+
     this.loaded = false
 
     if (options.autoload) {
@@ -131,11 +133,7 @@ class Db {
    *
    * @return {void}
    */
-  persist (persist) {
-    if (!persist) {
-      return Promise.resolve()
-    }
-
+  persist () {
     return new Promise((resolve, reject) => {
       steno.writeFile(this.filePath, JSON.stringify(this.data), (error) => {
         if (error) {
@@ -154,17 +152,14 @@ class Db {
    * @method syncMetaData
    *
    * @param  {Object}     metaData
-   * @param  {Boolean}    persist
    *
    * @return {void}
    */
-  async syncMetaData (metaData, persist = true) {
+  syncMetaData (metaData) {
     ow(metaData, ow.object.label('metaData').hasKeys('domain'))
     const versions = this.data.versions
     this.data = _.omit(metaData, ['versions'])
     this.data.versions = versions
-
-    await this.persist(persist)
   }
 
   /**
@@ -174,11 +169,10 @@ class Db {
    * @method saveVersion
    *
    * @param  {Object}    payload
-   * @param  {Boolean}   persist
    *
    * @return {Object}
    */
-  async saveVersion (payload, persist = true) {
+  saveVersion (payload) {
     this._ensureIsLoaded()
 
     ow(payload, ow.object.label('payload').hasKeys('no'))
@@ -190,26 +184,10 @@ class Db {
     if (!version) {
       payload = this._normalizeVersion(payload)
       this.data.versions.push(payload)
-
-      await this.persist(persist)
       return payload
     }
 
-    /**
-     * Create a new changeset to find what's really changed
-     */
-    const changset = new ChangeSet(version)
-    changset.merge(payload)
-
-    /**
-     * If there are dirty fields, then just merge and use them
-     */
-    const dirty = changset.dirty
-    if (_.size(dirty)) {
-      Object.assign(version, dirty)
-      await this.persist(persist)
-    }
-
+    Object.assign(version, payload)
     return version
   }
 
@@ -221,9 +199,8 @@ class Db {
    *
    * @param  {String}  versionNo
    * @param  {String}  payload
-   * @param  {Boolean} persist
    */
-  async addDoc (versionNo, payload, persist = true) {
+  addDoc (versionNo, payload) {
     this._ensureIsLoaded()
 
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
@@ -232,8 +209,7 @@ class Db {
     /**
      * Save version if not already created
      */
-    const version = await this.saveVersion({ no: versionNo }, false)
-
+    const version = this.saveVersion({ no: versionNo })
     const doc = _.find(version.docs, (d) => d.jsonPath === payload.jsonPath)
 
     /**
@@ -241,25 +217,10 @@ class Db {
      */
     if (!doc) {
       version.docs.push(payload)
-      await this.persist(persist)
       return payload
     }
 
-    /**
-     * Create a new changeset for finding changes
-     */
-    const changset = new ChangeSet(doc)
-    changset.merge(payload)
-
-    /**
-     * If there are dirty fields, then just merge and use them
-     */
-    const dirty = changset.dirty
-    if (_.size(dirty)) {
-      Object.assign(doc, payload)
-      await this.persist(persist)
-    }
-
+    Object.assign(doc, payload)
     return doc
   }
 
@@ -281,19 +242,14 @@ class Db {
    * @method removeVersion
    *
    * @param  {String}      no
-   * @param  {Boolean}     persist
    *
    * @return {void}
    */
-  async removeVersion (no, persist = true) {
+  removeVersion (no) {
     this._ensureIsLoaded()
 
     ow(no, ow.string.label('no').nonEmpty)
-    const removed = _.remove(this.data.versions, (version) => version.no === no)
-
-    if (removed.length) {
-      await this.persist(persist)
-    }
+    _.remove(this.data.versions, (version) => version.no === no)
   }
 
   /**
@@ -303,11 +259,10 @@ class Db {
    *
    * @param  {String}  versionNo
    * @param  {String}  jsonPath
-   * @param  {Boolean} persist
    *
    * @return {void}
    */
-  async removeDoc (versionNo, jsonPath, persist = true) {
+  removeDoc (versionNo, jsonPath) {
     this._ensureIsLoaded()
 
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
@@ -318,11 +273,7 @@ class Db {
       return
     }
 
-    const removed = _.remove(version.docs, (doc) => doc.jsonPath === jsonPath)
-
-    if (removed.length) {
-      await this.persist(persist)
-    }
+    _.remove(version.docs, (doc) => doc.jsonPath === jsonPath)
   }
 
   /**

@@ -10,7 +10,6 @@ const fs = require('fs-extra')
 const steno = require('steno')
 const _ = require('lodash')
 const ow = require('ow')
-// const ChangeSet = require('./ChangeSet')
 
 /**
  * The database for storing everything on disk
@@ -25,7 +24,6 @@ class Db {
     this.filePath = filePath
     this.onReady = typeof (options.onReady) === 'function' ? options.onReady : function () {}
     this.data = { versions: [] }
-    this.persisted = {}
 
     this.loaded = false
 

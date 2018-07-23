@@ -64,7 +64,7 @@ The documentation node associated with a version always.
 | content | Object | Yes | The `object` of nodes, returned by [@dimerapp/markdown](https://github.com/dimerapp/markdown).
 | permalink **(unique)** | String | Yes | The unique permalink for the doc. This is the URL people will visit to read the doc |
 | title | String | No | The `title` for the document. First `h1` will be used if missing.
-| jsonPath | String | Yes | The relative path, where the `content` should be saved |
+| jsonPath **(unique)** | String | Yes | The relative path, where the `content` should be saved |
 | summary | String | No | The document social summary. If missing will be fetched from the `content`.
 | redirects | Array[String] | No | An array of permalinks to be redirected to this document. |
 
@@ -89,10 +89,14 @@ Save a new doc to the datastore.
 const markdown = new Markdown('# Hello world')
 const content = await markdown.toJSON()
 
+// save actual doc
 await store.saveDoc('1.0.0', 'introduction.md', {
   permalink: 'introduction',
   content: content
 })
+
+// update meta data to database
+await store.persist()
 ```
 
 #### removeDoc(versionNo, filePath)
@@ -100,6 +104,9 @@ Remove doc from the store.
 
 ```js
 await store.removeDoc('1.0.0', 'introduction.md')
+
+// update meta data to database
+await store.persist()
 ```
 
 #### syncVersions(versions)
@@ -122,6 +129,9 @@ await store.syncVersions([
    depreciated: true
  }
 ])
+
+// update meta data to database
+await store.persist()
 ```
 
 #### getVersions

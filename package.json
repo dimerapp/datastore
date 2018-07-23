@@ -7,11 +7,11 @@
     "src"
   ],
   "scripts": {
-    "prepublishOnly": "pkg-ok",
     "pretest": "npm run lint",
     "test": "japa",
     "mrm": "mrm --preset=@adonisjs/mrm-preset",
     "commit": "git-cz",
+    "test:win": "node ./node_modules/japa-cli/index.js",
     "lint": "standard"
   },
   "keywords": [],

@@ -117,7 +117,7 @@ class Datastore {
     metaData.category = metaData.category || 'root'
     metaData.title = metaData.title || this._getTitle(doc.content)
 
-    await this.db.addDoc(versionNo, metaData, true)
+    this.db.addDoc(versionNo, metaData)
     await fs.outputJSON(join(this.baseDir, versionNo, filePath), doc.content)
   }
 
@@ -136,22 +136,17 @@ class Datastore {
     /**
      * Update/Add versions
      */
-    versions.forEach((version) => (this.db.saveVersion(version, false)))
+    versions.forEach((version) => (this.db.saveVersion(version)))
 
     /**
      * Remove non-existing versions
      */
-    versionsRemoved.forEach((version) => (this.db.removeVersion(version.no, false)))
+    versionsRemoved.forEach((version) => (this.db.removeVersion(version.no)))
 
     /**
      * Remove content for the versions which are removed
      */
     await Promise.all([versionsRemoved.map((version) => fs.remove(join(this.baseDir, version.no)))])
-
-    /**
-     * Persist DB
-     */
-    await this.db.persist(true)
   }
 
   /**
@@ -171,7 +166,7 @@ class Datastore {
     filePath = this._normalizePath(filePath)
 
     await fs.remove(join(this.baseDir, versionNo, filePath))
-    await this.db.removeDoc(versionNo, filePath, true)
+    this.db.removeDoc(versionNo, filePath)
   }
 
   /**
@@ -355,7 +350,8 @@ class Datastore {
    * @return {void}
    */
   async syncConfig (metaData) {
-    return this.db.syncMetaData(metaData)
+    this.db.syncMetaData(metaData)
+    return this.db.persist()
   }
 
   /**
@@ -426,6 +422,17 @@ class Datastore {
     }
 
     return search.search(term)
+  }
+
+  /**
+   * Persist store with changes
+   *
+   * @method persist
+   *
+   * @return {void}
+   */
+  persist () {
+    return this.db.persist()
   }
 }
 

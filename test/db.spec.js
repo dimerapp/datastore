@@ -25,7 +25,9 @@ test.group('Db', (group) => {
     const db = new Db(dbFile)
     await db.load()
 
-    await db.saveVersion({ no: '1.0.0' })
+    db.saveVersion({ no: '1.0.0' })
+    await db.persist()
+
     const contents = await fs.readJSON(dbFile)
 
     assert.deepEqual(contents, {
@@ -46,8 +48,10 @@ test.group('Db', (group) => {
     const db = new Db(dbFile)
     await db.load()
 
-    await db.saveVersion({ no: '1.0.0' })
-    await db.saveVersion({ no: '1.0.0', name: 'Version 1' })
+    db.saveVersion({ no: '1.0.0' })
+    db.saveVersion({ no: '1.0.0', name: 'Version 1' })
+    await db.persist()
+
     const contents = await fs.readJSON(dbFile)
 
     assert.deepEqual(contents, {
@@ -64,43 +68,18 @@ test.group('Db', (group) => {
     assert.isTrue(db.isFileValid())
   })
 
-  test('do not write to disk when version is same', async (assert) => {
-    const db = new Db(dbFile)
-    await db.load()
-
-    await db.saveVersion({ no: '1.0.0' })
-
-    db._persistContent = function () {
-      throw new Error('Never expected to be called')
-    }
-
-    await db.saveVersion({ no: '1.0.0' })
-    const contents = await fs.readJSON(dbFile)
-
-    assert.deepEqual(contents, {
-      versions: [{
-        no: '1.0.0',
-        name: '1.0.0',
-        default: false,
-        draft: false,
-        depreciated: false,
-        docs: []
-      }]
-    })
-
-    assert.isTrue(db.isFileValid())
-  })
-
   test('add doc for a given version', async (assert) => {
     const db = new Db(dbFile)
     await db.load()
 
-    await db.addDoc('1.0.0', {
+    db.addDoc('1.0.0', {
       permalink: 'foo',
       jsonPath: 'foo.json',
       title: 'Hello foo',
       category: 'root'
     })
+    await db.persist()
+
     const contents = await fs.readJSON(dbFile)
 
     assert.deepEqual(contents, {
@@ -128,14 +107,15 @@ test.group('Db', (group) => {
     const db = new Db(dbFile)
     await db.load()
 
-    await db.saveVersion({ no: '1.0.0', name: 'Version 1' })
-
-    await db.addDoc('1.0.0', {
+    db.saveVersion({ no: '1.0.0', name: 'Version 1' })
+    db.addDoc('1.0.0', {
       permalink: 'foo',
       jsonPath: 'foo.json',
       title: 'Hello foo',
       category: 'root'
     })
+    await db.persist()
+
     const contents = await fs.readJSON(dbFile)
 
     assert.deepEqual(contents, {
@@ -163,21 +143,23 @@ test.group('Db', (group) => {
     const db = new Db(dbFile)
     await db.load()
 
-    await db.saveVersion({ no: '1.0.0', name: 'Version 1' })
+    db.saveVersion({ no: '1.0.0', name: 'Version 1' })
 
-    await db.addDoc('1.0.0', {
+    db.addDoc('1.0.0', {
       permalink: 'foo',
       jsonPath: 'foo.json',
       title: 'Hello foo',
       category: 'root'
     })
 
-    await db.addDoc('1.0.0', {
+    db.addDoc('1.0.0', {
       permalink: 'bar',
       jsonPath: 'foo.json',
       title: 'Hi foo',
       category: 'root'
     })
+
+    await db.persist()
 
     const contents = await fs.readJSON(dbFile)
 
@@ -253,8 +235,9 @@ test.group('Db', (group) => {
     })
 
     await db.load()
-    await db.removeVersion('1.0.0', true)
+    db.removeVersion('1.0.0', true)
     assert.deepEqual(db.getVersions(), [])
+    await db.persist()
 
     const contents = await fs.readJSON(dbFile)
     assert.deepEqual(contents, { versions: [] })
@@ -276,7 +259,7 @@ test.group('Db', (group) => {
     })
 
     await db.load()
-    await db.removeVersion('1.0.0', true)
+    db.removeVersion('1.0.0', true)
     assert.deepEqual(db.getVersions(), [{
       default: false,
       draft: false,
@@ -284,6 +267,8 @@ test.group('Db', (group) => {
       no: '1.0.1',
       name: '1.0.1'
     }])
+
+    await db.persist()
 
     const contents = await fs.readJSON(dbFile)
     assert.deepEqual(contents, { versions: [{
@@ -315,7 +300,8 @@ test.group('Db', (group) => {
     })
 
     await db.load()
-    await db.removeDoc('1.0.0', 'foo.json')
+    db.removeDoc('1.0.0', 'foo.json')
+    await db.persist()
 
     const contents = await fs.readJSON(dbFile)
     assert.deepEqual(contents, { versions: [{
@@ -587,7 +573,9 @@ test.group('Db', (group) => {
     const db = new Db(dbFile, { autoload: false })
 
     await db.load()
-    await db.syncMetaData({ domain: 'foo' })
+    db.syncMetaData({ domain: 'foo' })
+    await db.persist()
+
     const contents = await fs.readJSON(dbFile)
 
     assert.deepEqual(contents, { domain: 'foo', versions: [] })
@@ -611,7 +599,7 @@ test.group('Db', (group) => {
     })
 
     await db.load()
-    await db.syncMetaData({
+    db.syncMetaData({
       domain: 'foo',
       themeSettings: {
         emojis: {
@@ -619,6 +607,8 @@ test.group('Db', (group) => {
         }
       }
     })
+    await db.persist()
+
     const contents = await fs.readJSON(dbFile)
 
     assert.deepEqual(contents, {

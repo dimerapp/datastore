@@ -131,12 +131,19 @@ class Datastore {
    * @return {void}
    */
   async syncVersions (versions) {
-    const versionsRemoved = _.differenceBy(this.db.getVersions(), versions, (version) => version.no)
+    const existingVersions = this.db.getVersions().map((version) => version)
+    const versionsRemoved = _.differenceBy(existingVersions, versions, (version) => version.no)
 
     /**
      * Update/Add versions
      */
     versions.forEach((version) => (this.db.saveVersion(version)))
+
+    /**
+     * Pulling from the latest database copy to get the normalized
+     * copy of versions
+     */
+    const versionsAdded = _.differenceBy(this.db.getVersions(), existingVersions, (version) => version.no)
 
     /**
      * Remove non-existing versions
@@ -147,6 +154,8 @@ class Datastore {
      * Remove content for the versions which are removed
      */
     await Promise.all([versionsRemoved.map((version) => fs.remove(join(this.baseDir, version.no)))])
+
+    return { added: versionsAdded, removed: versionsRemoved }
   }
 
   /**

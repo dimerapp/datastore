@@ -12,6 +12,7 @@ const { join } = require('path')
 const test = require('japa')
 const Markdown = require('@dimerapp/markdown')
 const dedent = require('dedent')
+const _ = require('lodash')
 
 const Datastore = require('../src/Datastore')
 
@@ -168,7 +169,7 @@ test.group('Datastore', (group) => {
     const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
     await store.db.load()
 
-    await store.syncVersions([
+    const { added, removed } = await store.syncVersions([
       {
         no: '1.0.0'
       },
@@ -181,6 +182,10 @@ test.group('Datastore', (group) => {
     await store.persist()
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
+
+    assert.deepEqual(removed, [])
+    assert.deepEqual(added, metaFile.versions.map((v) => _.omit(v, 'docs')))
+
     assert.deepEqual(metaFile, {
       versions: [
         {
@@ -218,7 +223,7 @@ test.group('Datastore', (group) => {
       content: nodes
     })
 
-    await store.syncVersions([
+    const { removed, added } = await store.syncVersions([
       {
         no: '1.0.0',
         name: 'Version 1'
@@ -232,6 +237,17 @@ test.group('Datastore', (group) => {
     await store.persist()
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
+    assert.deepEqual(removed, [])
+    assert.deepEqual(added, [
+      {
+        no: '1.0.1',
+        name: '1.0.1',
+        default: true,
+        depreciated: false,
+        draft: false
+      }
+    ])
+
     assert.deepEqual(metaFile, {
       versions: [
         {
@@ -282,7 +298,7 @@ test.group('Datastore', (group) => {
       content: nodes
     })
 
-    await store.syncVersions([
+    const { removed, added } = await store.syncVersions([
       {
         no: '1.0.0',
         name: 'Version 1'
@@ -292,6 +308,17 @@ test.group('Datastore', (group) => {
     await store.persist()
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
+    assert.deepEqual(added, [])
+    assert.deepEqual(removed, [
+      {
+        no: '1.0.1',
+        name: '1.0.1',
+        default: false,
+        depreciated: false,
+        draft: false
+      }
+    ])
+
     assert.deepEqual(metaFile, {
       versions: [
         {
@@ -308,6 +335,65 @@ test.group('Datastore', (group) => {
               jsonPath: 'foo.json'
             }
           ]
+        }
+      ]
+    })
+  })
+
+  test('sync versions should add the one\'s not already exists', async (assert) => {
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
+
+    const nodes = {
+      type: 'root',
+      children: [{}]
+    }
+
+    await store.saveDoc('1.0.1', 'foo.md', {
+      title: 'Hello world',
+      permalink: '/hello',
+      content: nodes
+    })
+
+    const { added, removed } = await store.syncVersions([
+      {
+        no: '1.0.0',
+        name: 'Version 1'
+      }
+    ])
+
+    await store.persist()
+
+    const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
+    assert.deepEqual(removed, [
+      {
+        no: '1.0.1',
+        name: '1.0.1',
+        default: false,
+        depreciated: false,
+        draft: false
+      }
+    ])
+
+    assert.deepEqual(added, [
+      {
+        no: '1.0.0',
+        name: 'Version 1',
+        default: false,
+        depreciated: false,
+        draft: false
+      }
+    ])
+
+    assert.deepEqual(metaFile, {
+      versions: [
+        {
+          no: '1.0.0',
+          name: 'Version 1',
+          default: false,
+          depreciated: false,
+          draft: false,
+          docs: []
         }
       ]
     })

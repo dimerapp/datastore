@@ -60,8 +60,8 @@ class Datastore {
    * @private
    */
   _getTitle ({ children }) {
-    const node = children.find((child) => child.tag === 'dimerTitle')
-    return node ? node.child[0].value : ''
+    const node = children.find((child) => child.tag === 'dimertitle')
+    return node ? node.children[0].value : ''
   }
 
   /**

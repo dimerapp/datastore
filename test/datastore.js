@@ -85,8 +85,8 @@ test.group('Datastore', (group) => {
       children: [
         {
           t: 'elem',
-          tag: 'dimerTitle',
-          child: [{ t: 'text', value: 'Hello world' }]
+          tag: 'dimertitle',
+          children: [{ t: 'text', value: 'Hello world' }]
         }
       ]
     }

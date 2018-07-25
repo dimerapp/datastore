@@ -18,8 +18,8 @@
   "author": "virk",
   "license": "MIT",
   "dependencies": {
-    "@dimerapp/markdown": "^1.0.2",
-    "elasticlunr": "^0.9.5",
+    "@dimerapp/markdown": "^1.0.3",
+    "elasticlunr": "git+https://github.com/weixsong/elasticlunr.js.git",
     "fs-extra": "^7.0.0",
     "lodash": "^4.17.10",
     "mdast-util-to-string": "^1.0.4",
@@ -27,7 +27,7 @@
     "steno": "^0.4.4"
   },
   "devDependencies": {
-    "@adonisjs/mrm-preset": "^1.0.9",
+    "@adonisjs/mrm-preset": "^1.0.10",
     "commitizen": "^2.10.1",
     "cz-conventional-changelog": "^2.1.0",
     "dedent": "^0.7.0",

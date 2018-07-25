@@ -110,13 +110,9 @@ class Db {
    * @return {void}
    */
   async load () {
-    await fs.ensureFile(this.filePath)
-
     try {
-      const data = await fs.readJSON(this.filePath)
-      this.data = {
-        versions: (data.versions || []).map((version) => this._normalizeVersion(version))
-      }
+      this.data = await fs.readJSON(this.filePath)
+      this.data.versions = (this.data.versions || []).map((version) => this._normalizeVersion(version))
     } catch (error) {
       this.data = {
         versions: []
@@ -136,14 +132,19 @@ class Db {
    */
   persist () {
     return new Promise((resolve, reject) => {
-      steno.writeFile(this.filePath, JSON.stringify(this.data), (error) => {
-        if (error) {
-          reject(error)
-          return
-        }
+      fs
+        .ensureFile(this.filePath)
+        .then(() => {
+          steno.writeFile(this.filePath, JSON.stringify(this.data), (error) => {
+            if (error) {
+              reject(error)
+              return
+            }
 
-        resolve()
-      })
+            resolve()
+          })
+        })
+        .catch(reject)
     })
   }
 
@@ -206,6 +207,11 @@ class Db {
 
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
     ow(payload, ow.object.label('payload').hasKeys('permalink', 'jsonPath', 'title', 'category'))
+
+    ow(payload.permalink, ow.string.label('payload.permalink').nonEmpty)
+    ow(payload.jsonPath, ow.string.label('payload.jsonPath').nonEmpty)
+    ow(payload.title, ow.string.label('payload.title').nonEmpty)
+    ow(payload.category, ow.string.label('payload.category').nonEmpty)
 
     /**
      * Save version if not already created

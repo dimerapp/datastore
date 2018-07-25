@@ -348,9 +348,11 @@ class Datastore {
       return null
     }
 
-    const doc = version.docs.find((doc) => {
-      return _.includes(doc.redirects.map(this._normalizePermalink.bind(this)), this._normalizePermalink(permalink))
-    })
+    const doc = version.docs
+      .filter((doc) => Array.isArray(doc.redirects))
+      .find((doc) => {
+        return _.includes(doc.redirects.map(this._normalizePermalink.bind(this)), this._normalizePermalink(permalink))
+      })
 
     if (!doc) {
       return null
@@ -381,7 +383,7 @@ class Datastore {
    * @return {Object}
    */
   getConfig () {
-    return _.omit(this.db.data, ['version'])
+    return _.omit(this.db.data, ['versions'])
   }
 
   /**

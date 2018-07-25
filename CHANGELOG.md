@@ -1,3 +1,14 @@
+<a name="1.0.8"></a>
+## [1.0.8](https://github.com/dimerapp/datastore/compare/v1.0.7...v1.0.8) (2018-07-25)
+
+
+### Bug Fixes
+
+* **datastore:** omit versions from getConfig call ([0b14899](https://github.com/dimerapp/datastore/commit/0b14899))
+* **datastore:** return docs those who doesn't have redirects array ([bb9d975](https://github.com/dimerapp/datastore/commit/bb9d975))
+
+
+
 <a name="1.0.7"></a>
 ## [1.0.7](https://github.com/dimerapp/datastore/compare/v1.0.6...v1.0.7) (2018-07-25)
 

@@ -1,3 +1,14 @@
+<a name="1.0.6"></a>
+## [1.0.6](https://github.com/dimerapp/datastore/compare/v1.0.5...v1.0.6) (2018-07-25)
+
+
+### Bug Fixes
+
+* return null when doc is missing ([49f3247](https://github.com/dimerapp/datastore/commit/49f3247))
+* use correct property name for fetching title from ast ([2262cc8](https://github.com/dimerapp/datastore/commit/2262cc8))
+
+
+
 <a name="1.0.5"></a>
 ## [1.0.5](https://github.com/dimerapp/datastore/compare/v1.0.4...v1.0.5) (2018-07-25)
 

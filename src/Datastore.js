@@ -60,8 +60,8 @@ class Datastore {
    * @private
    */
   _getTitle ({ children }) {
-    const node = children.find((child) => child.tag === 'dimerTitle')
-    return node ? node.child[0].value : ''
+    const node = children.find((child) => child.tag === 'dimertitle')
+    return node ? node.children[0].value : ''
   }
 
   /**
@@ -106,13 +106,15 @@ class Datastore {
       throw error
     }
 
-    const metaData = _.reduce(doc, (result, value, key) => {
-      if (key !== 'content') {
-        result[key] = value
-      }
-      return result
-    }, { jsonPath: filePath })
+    /**
+     * Build meta data by copying all the fields, except content
+     */
+    const metaData = _.omit(doc, 'content')
 
+    /**
+     * Save required properties to metaData
+     */
+    metaData.jsonPath = filePath
     metaData.category = metaData.category || 'root'
     metaData.title = metaData.title || this._getTitle(doc.content)
 
@@ -286,6 +288,11 @@ class Datastore {
     }
 
     const doc = version.docs.find((doc) => doc.jsonPath === this._normalizePath(filePath))
+
+    if (!doc) {
+      return null
+    }
+
     return this.loadContent(versionNo, doc)
   }
 
@@ -312,6 +319,10 @@ class Datastore {
     const doc = version.docs.find((doc) => {
       return this._normalizePermalink(doc.permalink) === this._normalizePermalink(permalink)
     })
+
+    if (!doc) {
+      return null
+    }
 
     return this.loadContent(versionNo, doc)
   }

@@ -348,9 +348,11 @@ class Datastore {
       return null
     }
 
-    const doc = version.docs.find((doc) => {
-      return _.includes(doc.redirects.map(this._normalizePermalink.bind(this)), this._normalizePermalink(permalink))
-    })
+    const doc = version.docs
+      .filter((doc) => Array.isArray(doc.redirects))
+      .find((doc) => {
+        return _.includes(doc.redirects.map(this._normalizePermalink.bind(this)), this._normalizePermalink(permalink))
+      })
 
     if (!doc) {
       return null

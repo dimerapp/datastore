@@ -1076,6 +1076,29 @@ test.group('Datastore', (group) => {
     assert.equal(redirectTo, '/hello')
   })
 
+  test('return null for redirected permalink when doc has no redirects', async (assert) => {
+    const store = new Datastore(domainDir)
+    await store.db.load()
+
+    const template = dedent`
+    Hello world
+
+    ## Database
+    Database content
+    `
+
+    const fooFile = await new Markdown(template).toJSON()
+
+    await store.saveDoc('1.0.0', 'foo.md', {
+      title: 'Hello world',
+      permalink: '/hello',
+      content: fooFile.contents
+    })
+
+    const redirectTo = store.redirectedPermalink('1.0.0', 'hel')
+    assert.isNull(redirectTo)
+  })
+
   test('get a single doc by permalink by normalizing slashes', async (assert) => {
     const store = new Datastore(domainDir)
     await store.db.load()

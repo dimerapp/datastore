@@ -605,6 +605,25 @@ test.group('Datastore', (group) => {
     ])
   })
 
+  test('return null when version doesn\'t exists', async (assert) => {
+    const store = new Datastore(domainDir)
+    await store.db.load()
+
+    const nodes = {
+      type: 'root',
+      children: [{}]
+    }
+
+    await store.saveDoc('1.0.0', 'foo.md', {
+      title: 'Hello world',
+      permalink: '/hello',
+      content: nodes
+    })
+
+    const docs = await store.getTree('1.0.1')
+    assert.isNull(docs)
+  })
+
   test('order versions by jsonPath', async (assert) => {
     const store = new Datastore(domainDir)
     await store.db.load()

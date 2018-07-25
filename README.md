@@ -76,6 +76,21 @@ const Datastore = require('@dimerapp/datastore')
 
 const domain = 'adonisjs.dimerapp.com'
 const store = new Datastore(domain)
+
+await store.load()
+```
+
+#### load(clean = false)
+Load the data store to start mutating it, if store is not loaded, hard exceptions will be raised.
+
+Also when you pass `clean=true`, it will load the store from a clean slate. It is helpful, when you want to build documentation from scratch.
+
+```js
+await store.load()
+
+// from clean slate
+
+await store.load(true)
 ```
 
 #### saveDoc(versionNo, filePath, doc)

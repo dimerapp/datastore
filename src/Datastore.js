@@ -106,13 +106,15 @@ class Datastore {
       throw error
     }
 
-    const metaData = _.reduce(doc, (result, value, key) => {
-      if (key !== 'content') {
-        result[key] = value
-      }
-      return result
-    }, { jsonPath: filePath })
+    /**
+     * Build meta data by copying all the fields, except content
+     */
+    const metaData = _.omit(doc, 'content')
 
+    /**
+     * Save required properties to metaData
+     */
+    metaData.jsonPath = filePath
     metaData.category = metaData.category || 'root'
     metaData.title = metaData.title || this._getTitle(doc.content)
 

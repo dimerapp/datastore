@@ -20,14 +20,13 @@ const Search = require('./Search')
  *
  * @class Datastore
  *
- * @param {String} domain
+ * @param {String} storageDir
  */
 class Datastore {
-  constructor (domain) {
-    ow(domain, ow.string.label('domain').nonEmpty)
+  constructor (storageDir) {
+    ow(storageDir, ow.string.label('storageDir').nonEmpty)
+    this.baseDir = storageDir
 
-    this.domain = domain
-    this.baseDir = join(__dirname, '../sites', this.domain)
     this.db = new Db(join(this.baseDir, 'meta.json'))
     this.searchJar = {}
   }

@@ -110,8 +110,6 @@ class Db {
    * @return {void}
    */
   async load () {
-    await fs.ensureFile(this.filePath)
-
     try {
       this.data = await fs.readJSON(this.filePath)
       this.data.versions = (this.data.versions || []).map((version) => this._normalizeVersion(version))
@@ -134,14 +132,19 @@ class Db {
    */
   persist () {
     return new Promise((resolve, reject) => {
-      steno.writeFile(this.filePath, JSON.stringify(this.data), (error) => {
-        if (error) {
-          reject(error)
-          return
-        }
+      fs
+        .ensureFile(this.filePath)
+        .then(() => {
+          steno.writeFile(this.filePath, JSON.stringify(this.data), (error) => {
+            if (error) {
+              reject(error)
+              return
+            }
 
-        resolve()
-      })
+            resolve()
+          })
+        })
+        .catch(reject)
     })
   }
 

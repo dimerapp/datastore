@@ -1,3 +1,13 @@
+<a name="1.0.4"></a>
+## [1.0.4](https://github.com/dimerapp/datastore/compare/v1.0.3...v1.0.4) (2018-07-25)
+
+
+### Features
+
+* **datastore:** add support to load store from clean slate ([a419685](https://github.com/dimerapp/datastore/commit/a419685))
+
+
+
 <a name="1.0.3"></a>
 ## [1.0.3](https://github.com/dimerapp/datastore/compare/v1.0.2...v1.0.3) (2018-07-24)
 

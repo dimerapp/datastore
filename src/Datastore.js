@@ -223,14 +223,14 @@ class Datastore {
    * @param  {Boolean} [limit = 0]
    * @param  {Boolean} [withContent = false]
    *
-   * @return {Array}
+   * @return {Array|Null}
    */
   async getTree (versionNo, limit = 0, withContent = false) {
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
 
     const version = this.db.getVersion(versionNo)
     if (!version) {
-      return []
+      return null
     }
 
     let docs = _.orderBy(version.docs, 'jsonPath')

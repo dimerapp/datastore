@@ -286,6 +286,11 @@ class Datastore {
     }
 
     const doc = version.docs.find((doc) => doc.jsonPath === this._normalizePath(filePath))
+
+    if (!doc) {
+      return null
+    }
+
     return this.loadContent(versionNo, doc)
   }
 
@@ -312,6 +317,10 @@ class Datastore {
     const doc = version.docs.find((doc) => {
       return this._normalizePermalink(doc.permalink) === this._normalizePermalink(permalink)
     })
+
+    if (!doc) {
+      return null
+    }
 
     return this.loadContent(versionNo, doc)
   }

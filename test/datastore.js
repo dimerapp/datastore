@@ -756,6 +756,25 @@ test.group('Datastore', (group) => {
     })
   })
 
+  test('return null when single doc is missing', async (assert) => {
+    const store = new Datastore(join(__dirname, '..', 'sites', 'adonisjs.dimerapp.com'))
+    await store.db.load()
+
+    const nodes = {
+      type: 'root',
+      children: [{}]
+    }
+
+    await store.saveDoc('1.0.0', 'foo.md', {
+      title: 'Hello world',
+      permalink: '/hello',
+      content: nodes
+    })
+
+    const doc = await store.getDoc('1.0.0', 'bar.json')
+    assert.isNull(doc)
+  })
+
   test('get a single doc by permalink', async (assert) => {
     const store = new Datastore(join(__dirname, '..', 'sites', 'adonisjs.dimerapp.com'))
     await store.db.load()
@@ -779,6 +798,25 @@ test.group('Datastore', (group) => {
       category: 'root',
       content: nodes
     })
+  })
+
+  test('return null if doc is missing', async (assert) => {
+    const store = new Datastore(join(__dirname, '..', 'sites', 'adonisjs.dimerapp.com'))
+    await store.db.load()
+
+    const nodes = {
+      type: 'root',
+      children: [{}]
+    }
+
+    await store.saveDoc('1.0.0', 'foo.md', {
+      title: 'Hello world',
+      permalink: '/hello',
+      content: nodes
+    })
+
+    const doc = await store.getDocByPermalink('1.0.0', 'foo')
+    assert.isNull(doc)
   })
 
   test('index docs for a given version', async (assert) => {

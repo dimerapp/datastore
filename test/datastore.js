@@ -1043,4 +1043,34 @@ test.group('Datastore', (group) => {
       content: nodes
     })
   })
+
+  test('load store from a blank slate', async (assert) => {
+    const store = new Datastore('adonisjs.dimerapp.com', 'http://localhost:3000')
+    await store.db.load()
+
+    const nodes = {
+      type: 'root',
+      children: [{}]
+    }
+
+    await store.saveDoc('1.0.0', 'foo.md', {
+      title: 'Hello world',
+      permalink: '/hello',
+      content: nodes
+    })
+
+    await store.persist()
+    let metaFile = await fs.exists(join(domainDir, 'meta.json'))
+    let saveFile = await fs.exists(join(domainDir, '1.0.0', 'foo.json'))
+
+    assert.isTrue(metaFile)
+    assert.isTrue(saveFile)
+
+    await store.load(true)
+
+    saveFile = await fs.exists(join(domainDir, '1.0.0', 'foo.json'))
+    assert.isFalse(saveFile)
+
+    assert.deepEqual(store.db.data, { versions: [] })
+  })
 })

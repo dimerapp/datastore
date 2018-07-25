@@ -434,6 +434,24 @@ class Datastore {
   }
 
   /**
+   * Load database. If `clean` is set to true, then it will
+   * start from a blank slate.
+   *
+   * @method load
+   *
+   * @param  {Boolean} [clean = false]
+   *
+   * @return {void}
+   */
+  async load (clean = false) {
+    if (clean) {
+      await fs.remove(this.baseDir)
+    }
+
+    await this.db.load()
+  }
+
+  /**
    * Persist store with changes
    *
    * @method persist

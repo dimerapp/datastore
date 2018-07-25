@@ -118,6 +118,9 @@ class Db {
         versions: (data.versions || []).map((version) => this._normalizeVersion(version))
       }
     } catch (error) {
+      this.data = {
+        versions: []
+      }
     }
 
     this.loaded = true

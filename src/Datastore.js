@@ -33,22 +33,6 @@ class Datastore {
   }
 
   /**
-   * Returns the title node from the content nodes
-   *
-   * @method _getTitle
-   *
-   * @param  {Array}  options.children
-   *
-   * @return {String}
-   *
-   * @private
-   */
-  _getTitle ({ children }) {
-    const node = children.find((child) => child.tag === 'dimertitle')
-    return node ? node.children[0].value : ''
-  }
-
-  /**
    * Normalizes the path of the doc content file
    *
    * @method _normalizePath
@@ -80,8 +64,10 @@ class Datastore {
      */
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
     ow(filePath, ow.string.label('filePath').nonEmpty)
-    ow(doc, ow.object.label('doc').hasKeys('content', 'permalink'))
+    ow(doc, ow.object.label('doc').hasKeys('content', 'permalink', 'title'))
+
     ow(doc.permalink, ow.string.label('doc.permalink').nonEmpty)
+    ow(doc.title, ow.string.label('doc.title').nonEmpty)
 
     /**
      * Normalize the file path and convert it to .json file
@@ -108,7 +94,6 @@ class Datastore {
      */
     metaData.jsonPath = jsonPath
     metaData.category = metaData.category || 'root'
-    metaData.title = metaData.title || this._getTitle(doc.content)
 
     /**
      * Save actual file

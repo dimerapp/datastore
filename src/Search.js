@@ -82,7 +82,8 @@ class Search {
   async getMTime (filePath) {
     try {
       const stats = await fs.stat(filePath)
-      return stats.mtimeMs
+      console.log(stats)
+      return stats.mtime.getTime()
     } catch (error) {
       return 0
     }

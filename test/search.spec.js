@@ -119,11 +119,11 @@ test.group('Search', (group) => {
     index.docs['/hello#hello-world'].title = 'Updated title'
     await index.save()
 
-    await sleep(8000)
+    await sleep(4000)
     await search.search(indexFile, 'different')
 
     assert.isTrue(firstMTime < search.indexesCache.get(indexFile).mtime)
-  }).timeout(10000)
+  }).timeout(8000)
 
   test('invalid cache indexes when index file is missing from the disk', async (assert) => {
     const content = dedent`
@@ -155,5 +155,5 @@ test.group('Search', (group) => {
 
     await search.revalidate()
     assert.deepEqual(search.indexesCache, new Map())
-  }).timeout(4000)
+  })
 })

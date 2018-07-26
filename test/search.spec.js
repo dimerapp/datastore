@@ -117,7 +117,7 @@ test.group('Search', (group) => {
     const firstMTime = search.indexesCache.get(indexFile).mtime
     const firstSize = search.indexesCache.get(indexFile).size
 
-    index.docs['/hello#hello-world'].title = 'Updated title'
+    index.docs['/hello'].title = 'Updated title'
     await index.save()
 
     await sleep(4000)

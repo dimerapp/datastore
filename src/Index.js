@@ -116,7 +116,7 @@ class Index {
     content.children
       .map((child) => {
         if (this._isHeading(child)) {
-          sectionUrl = `${permalink}${child.children[0].props.href}`
+          sectionUrl = child.tag === 'h1' ? permalink : `${permalink}${child.children[0].props.href}`
           this.docs[sectionUrl] = { title: toString(child), body: '', url: sectionUrl }
           return
         }

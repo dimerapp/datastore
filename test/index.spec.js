@@ -40,23 +40,23 @@ test.group('Index', (group) => {
 
     index.addDoc(vfile.contents, '/hello')
 
-    assert.deepEqual(index.docs, [
-      {
+    assert.deepEqual(index.docs, {
+      '/hello#hello-world': {
         title: 'Hello world',
         body: `This is the first paragraph`,
         url: '/hello#hello-world'
       },
-      {
+      '/hello#this-is-section-2': {
         title: 'This is section 2',
         body: `Here's the section 2 content`,
         url: '/hello#this-is-section-2'
       },
-      {
+      '/hello#this-is-section-3': {
         title: 'This is section 3',
         body: `Here's the section 3 content`,
         url: '/hello#this-is-section-3'
       }
-    ])
+    })
   })
 
   test('do not index pre blocks', async (assert) => {
@@ -81,23 +81,23 @@ test.group('Index', (group) => {
     const vfile = await markdown.toJSON()
 
     index.addDoc(vfile.contents, '/hello')
-    assert.deepEqual(index.docs, [
-      {
+    assert.deepEqual(index.docs, {
+      '/hello#hello-world': {
         title: 'Hello world',
         body: `This is the first paragraph`,
         url: '/hello#hello-world'
       },
-      {
+      '/hello#this-is-section-2': {
         title: 'This is section 2',
         body: `Here's the section 2 content`,
         url: '/hello#this-is-section-2'
       },
-      {
+      '/hello#this-is-section-3': {
         title: 'This is section 3',
         body: `Here's the section 3 content`,
         url: '/hello#this-is-section-3'
       }
-    ])
+    })
   })
 
   test('index inner content of inline decorated content', async (assert) => {
@@ -118,23 +118,23 @@ test.group('Index', (group) => {
     const vfile = await markdown.toJSON()
 
     index.addDoc(vfile.contents, '/hello')
-    assert.deepEqual(index.docs, [
-      {
+    assert.deepEqual(index.docs, {
+      '/hello#hello-world': {
         title: 'Hello world',
         body: `This is the first paragraph`,
         url: '/hello#hello-world'
       },
-      {
+      '/hello#this-is-section-2': {
         title: 'This is section 2',
         body: `Here's the section 2 content`,
         url: '/hello#this-is-section-2'
       },
-      {
+      '/hello#this-is-section-3': {
         title: 'This is section 3',
         body: `Here's the section 3 content`,
         url: '/hello#this-is-section-3'
       }
-    ])
+    })
   })
 
   test('index inner content of list items', async (assert) => {
@@ -156,23 +156,23 @@ test.group('Index', (group) => {
     const vfile = await markdown.toJSON()
 
     index.addDoc(vfile.contents, '/hello')
-    assert.deepEqual(index.docs, [
-      {
+    assert.deepEqual(index.docs, {
+      '/hello#hello-world': {
         title: 'Hello world',
         body: `This is the first paragraph`,
         url: '/hello#hello-world'
       },
-      {
+      '/hello#this-is-section-2': {
         title: 'This is section 2',
         body: `Here's the section 2 content Item 2`,
         url: '/hello#this-is-section-2'
       },
-      {
+      '/hello#this-is-section-3': {
         title: 'This is section 3',
         body: `Here's the section 3 content`,
         url: '/hello#this-is-section-3'
       }
-    ])
+    })
   })
 
   test('index inner content of ordered list items', async (assert) => {
@@ -194,23 +194,23 @@ test.group('Index', (group) => {
     const vfile = await markdown.toJSON()
 
     index.addDoc(vfile.contents, '/hello')
-    assert.deepEqual(index.docs, [
-      {
+    assert.deepEqual(index.docs, {
+      '/hello#hello-world': {
         title: 'Hello world',
         body: `This is the first paragraph`,
         url: '/hello#hello-world'
       },
-      {
+      '/hello#this-is-section-2': {
         title: 'This is section 2',
         body: `Here's the section 2 content Item 2`,
         url: '/hello#this-is-section-2'
       },
-      {
+      '/hello#this-is-section-3': {
         title: 'This is section 3',
         body: `Here's the section 3 content`,
         url: '/hello#this-is-section-3'
       }
-    ])
+    })
   })
 
   test('index inner content of todo items', async (assert) => {
@@ -232,23 +232,23 @@ test.group('Index', (group) => {
     const vfile = await markdown.toJSON()
 
     index.addDoc(vfile.contents, '/hello')
-    assert.deepEqual(index.docs, [
-      {
+    assert.deepEqual(index.docs, {
+      '/hello#hello-world': {
         title: 'Hello world',
         body: `This is the first paragraph`,
         url: '/hello#hello-world'
       },
-      {
+      '/hello#this-is-section-2': {
         title: 'This is section 2',
         body: `Here's the section 2 content Item 2`,
         url: '/hello#this-is-section-2'
       },
-      {
+      '/hello#this-is-section-3': {
         title: 'This is section 3',
         body: `Here's the section 3 content`,
         url: '/hello#this-is-section-3'
       }
-    ])
+    })
   })
 
   test('index inner content of todo items', async (assert) => {
@@ -270,23 +270,23 @@ test.group('Index', (group) => {
     const vfile = await markdown.toJSON()
 
     index.addDoc(vfile.contents, '/hello')
-    assert.deepEqual(index.docs, [
-      {
+    assert.deepEqual(index.docs, {
+      '/hello#hello-world': {
         title: 'Hello world',
         body: `This is the first paragraph`,
         url: '/hello#hello-world'
       },
-      {
+      '/hello#this-is-section-2': {
         title: 'This is section 2',
         body: `Here's the section 2 content Item 2`,
         url: '/hello#this-is-section-2'
       },
-      {
+      '/hello#this-is-section-3': {
         title: 'This is section 3',
         body: `Here's the section 3 content`,
         url: '/hello#this-is-section-3'
       }
-    ])
+    })
   })
 
   test('ignore codeblocks inside macros', async (assert) => {
@@ -313,23 +313,23 @@ test.group('Index', (group) => {
     const vfile = await markdown.toJSON()
 
     index.addDoc(vfile.contents, '/hello')
-    assert.deepEqual(index.docs, [
-      {
+    assert.deepEqual(index.docs, {
+      '/hello#hello-world': {
         title: 'Hello world',
         body: `This is the first paragraph`,
         url: '/hello#hello-world'
       },
-      {
+      '/hello#this-is-section-2': {
         title: 'This is section 2',
         body: `Here's the section 2 content`,
         url: '/hello#this-is-section-2'
       },
-      {
+      '/hello#this-is-section-3': {
         title: 'This is section 3',
         body: `Here's the section 3 content`,
         url: '/hello#this-is-section-3'
       }
-    ])
+    })
   })
 
   test('make sections of nested headings', async (assert) => {
@@ -353,28 +353,28 @@ test.group('Index', (group) => {
     const vfile = await markdown.toJSON()
 
     index.addDoc(vfile.contents, '/hello')
-    assert.deepEqual(index.docs, [
-      {
+    assert.deepEqual(index.docs, {
+      '/hello#hello-world': {
         title: 'Hello world',
         body: `This is the first paragraph`,
         url: '/hello#hello-world'
       },
-      {
+      '/hello#this-is-section-2': {
         title: 'This is section 2',
         body: `Here's the section 2 content`,
         url: '/hello#this-is-section-2'
       },
-      {
+      '/hello#this-is-section-21': {
         title: 'This is section 2.1',
         body: `Here's the section 2.1 content`,
         url: '/hello#this-is-section-21'
       },
-      {
+      '/hello#this-is-section-3': {
         title: 'This is section 3',
         body: `Here's the section 3 content`,
         url: '/hello#this-is-section-3'
       }
-    ])
+    })
   })
 
   test('index inner content of ordered list items', async (assert) => {
@@ -396,23 +396,23 @@ test.group('Index', (group) => {
     const vfile = await markdown.toJSON()
 
     index.addDoc(vfile.contents, '/hello')
-    assert.deepEqual(index.docs, [
-      {
+    assert.deepEqual(index.docs, {
+      '/hello#hello-world': {
         title: 'Hello world',
         body: `This is the first paragraph`,
         url: '/hello#hello-world'
       },
-      {
+      '/hello#this-is-section-2': {
         title: 'This is section 2',
         body: `Here's the section 2 content Item 2`,
         url: '/hello#this-is-section-2'
       },
-      {
+      '/hello#this-is-section-3': {
         title: 'This is section 3',
         body: `Here's the section 3 content`,
         url: '/hello#this-is-section-3'
       }
-    ])
+    })
   })
 
   test('index inner content of todo items', async (assert) => {
@@ -434,23 +434,23 @@ test.group('Index', (group) => {
     const vfile = await markdown.toJSON()
 
     index.addDoc(vfile.contents, '/hello')
-    assert.deepEqual(index.docs, [
-      {
+    assert.deepEqual(index.docs, {
+      '/hello#hello-world': {
         title: 'Hello world',
         body: `This is the first paragraph`,
         url: '/hello#hello-world'
       },
-      {
+      '/hello#this-is-section-2': {
         title: 'This is section 2',
         body: `Here's the section 2 content Item 2`,
         url: '/hello#this-is-section-2'
       },
-      {
+      '/hello#this-is-section-3': {
         title: 'This is section 3',
         body: `Here's the section 3 content`,
         url: '/hello#this-is-section-3'
       }
-    ])
+    })
   })
 
   test('index inner content of todo items', async (assert) => {
@@ -472,23 +472,23 @@ test.group('Index', (group) => {
     const vfile = await markdown.toJSON()
 
     index.addDoc(vfile.contents, '/hello')
-    assert.deepEqual(index.docs, [
-      {
+    assert.deepEqual(index.docs, {
+      '/hello#hello-world': {
         title: 'Hello world',
         body: `This is the first paragraph`,
         url: '/hello#hello-world'
       },
-      {
+      '/hello#this-is-section-2': {
         title: 'This is section 2',
         body: `Here's the section 2 content Item 2`,
         url: '/hello#this-is-section-2'
       },
-      {
+      '/hello#this-is-section-3': {
         title: 'This is section 3',
         body: `Here's the section 3 content`,
         url: '/hello#this-is-section-3'
       }
-    ])
+    })
   })
 
   test('ignore codeblocks inside macros', async (assert) => {
@@ -515,23 +515,23 @@ test.group('Index', (group) => {
     const vfile = await markdown.toJSON()
 
     index.addDoc(vfile.contents, '/hello')
-    assert.deepEqual(index.docs, [
-      {
+    assert.deepEqual(index.docs, {
+      '/hello#hello-world': {
         title: 'Hello world',
         body: `This is the first paragraph`,
         url: '/hello#hello-world'
       },
-      {
+      '/hello#this-is-section-2': {
         title: 'This is section 2',
         body: `Here's the section 2 content`,
         url: '/hello#this-is-section-2'
       },
-      {
+      '/hello#this-is-section-3': {
         title: 'This is section 3',
         body: `Here's the section 3 content`,
         url: '/hello#this-is-section-3'
       }
-    ])
+    })
   })
 
   test('write index to disk', async (assert) => {

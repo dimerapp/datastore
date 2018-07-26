@@ -866,7 +866,7 @@ test.group('Datastore', (group) => {
     await store.indexVersion('1.0.0')
     const indexFile = await fs.readJSON(join(domainDir, '1.0.0', 'search.json'))
 
-    assert.deepEqual(indexFile.documentStore.docs, {
+    assert.deepEqual(indexFile.docs, {
       '/hello#this-is-a-section': {
         title: 'This is a section',
         body: 'Some content here',
@@ -877,7 +877,7 @@ test.group('Datastore', (group) => {
     await store.indexVersion('1.0.1')
     const indexFile1 = await fs.readJSON(join(domainDir, '1.0.1', 'search.json'))
 
-    assert.deepEqual(indexFile1.documentStore.docs, {
+    assert.deepEqual(indexFile1.docs, {
       '/hello#this-is-a-section': {
         title: 'This is a section',
         body: 'Some content here',

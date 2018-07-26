@@ -11,6 +11,7 @@ const ow = require('ow')
 const fs = require('fs-extra')
 const toString = require('mdast-util-to-string')
 const lunr = require('lunr')
+const _ = require('lodash')
 
 /**
  * Creates a search index for all the docs
@@ -39,7 +40,7 @@ class Index {
      *
      * @type {Array}
      */
-    this.docs = []
+    this.docs = {}
   }
 
   /**
@@ -110,25 +111,20 @@ class Index {
     ow(content.children, ow.array.label('content.children').nonEmpty)
     ow(permalink, ow.string.label('permalink').nonEmpty)
 
-    const sections = []
-    let section = null
+    let sectionUrl = null
 
     content.children
       .map((child) => {
         if (this._isHeading(child)) {
-          section = { title: toString(child), body: [], url: `${permalink}${child.children[0].props.href}` }
-          sections.push(section)
+          sectionUrl = `${permalink}${child.children[0].props.href}`
+          this.docs[sectionUrl] = { title: toString(child), body: '', url: sectionUrl }
           return
         }
 
-        if (section) {
-          section.body.push(this._nodeToString(child))
+        if (sectionUrl && this.docs[sectionUrl]) {
+          this.docs[sectionUrl].body += this._nodeToString(child)
         }
       })
-
-    sections.forEach((section) => {
-      this.docs.push({ title: section.title, body: section.body.join(''), url: section.url })
-    })
   }
 
   /**
@@ -147,7 +143,7 @@ class Index {
       this.field('body', { boost: 1 })
       this.metadataWhitelist = ['position']
 
-      self.docs.forEach((doc) => (this.add(doc)))
+      _.each(self.docs, (doc) => (this.add(doc)))
     })
 
     await fs.outputJSON(this.indexPath, {

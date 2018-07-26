@@ -13,6 +13,7 @@ const _ = require('lodash')
 const ow = require('ow')
 
 const Db = require('./Db')
+const Index = require('./Index')
 const Search = require('./Search')
 
 /**
@@ -28,7 +29,6 @@ class Datastore {
     this.baseDir = storageDir
 
     this.db = new Db(join(this.baseDir, 'meta.json'))
-    this.searchJar = {}
   }
 
   /**
@@ -387,24 +387,6 @@ class Datastore {
   }
 
   /**
-   * Returns the search class instance for a given version
-   *
-   * @method searchFor
-   *
-   * @param  {String}   versionNo
-   * @param  {Boolean}  forceNew
-   *
-   * @return {Search}
-   */
-  searchFor (versionNo, forceNew = false) {
-    if (!this.searchJar[versionNo] || forceNew) {
-      this.searchJar[versionNo] = new Search(join(this.baseDir, versionNo, 'search.json'))
-    }
-
-    return this.searchJar[versionNo]
-  }
-
-  /**
    * Creates a search index for a given version
    *
    * @method indexVersion
@@ -414,16 +396,16 @@ class Datastore {
    * @return {void}
    */
   async indexVersion (versionNo) {
-    const search = this.searchFor(versionNo, true)
+    const index = new Index(join(this.baseDir, versionNo, 'search.json'))
     const categories = await this.getTree(versionNo, 0, true)
 
     categories.forEach(({ docs }) => {
       docs.forEach((doc) => {
-        search.addDoc(doc.content, doc.permalink)
+        index.addDoc(doc.content, doc.permalink)
       })
     })
 
-    await search.save()
+    await index.save()
   }
 
   /**
@@ -437,12 +419,14 @@ class Datastore {
    * @return {Array}
    */
   async search (versionNo, term) {
-    const search = this.searchFor(versionNo)
-    if (!search.readIndex) {
-      await search.load()
-    }
+    const versionPaths = this.db.getVersions().map(({ no }) => join(this.baseDir, no, 'search.json'))
+    const redundantPaths = _.difference(Search.paths, versionPaths)
 
-    return search.search(term)
+    redundantPaths.forEach((path) => {
+      Search.removeFromCache(path)
+    })
+
+    return Search.search(join(this.baseDir, versionNo, 'search.json'), term)
   }
 
   /**

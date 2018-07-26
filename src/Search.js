@@ -1,5 +1,5 @@
 /*
-* md-serve
+* datastore
 *
 * (c) Harminder Virk <virk@adonisjs.com>
 *
@@ -7,139 +7,68 @@
 * file that was distributed with this source code.
 */
 
-const ow = require('ow')
 const fs = require('fs-extra')
-const elasticlunr = require('elasticlunr')
-const toString = require('mdast-util-to-string')
+const lunr = require('lunr')
 
 class Search {
-  constructor (indexPath) {
-    this.indexPath = indexPath
-    this.blackListedBlockTags = ['pre']
-    this.blackListedClasses = ['dimer-highlight', 'toc-container']
-    this.headings = ['h2', 'h3', 'h4']
+  constructor () {
+    this.indexesCache = {}
+  }
 
-    /**
-     * Each child of ul is seperated by a space
-     */
-    this.spacer = {
-      'ul': ' ',
-      'ol': ' '
-    }
-
-    /**
-     * The index used to build the index
-     */
-    this.writeIndex = elasticlunr(function () {
-      this.addField('title')
-      this.addField('body')
-      this.setRef('url')
-    })
-
-    /**
-     * The read index for search
-     */
-    this.readIndex = null
+  get paths () {
+    return Object.keys(this.indexesCache)
   }
 
   /**
-   * Returns a boolean if node is white-listed to the index
+   * Clear the cache
    *
-   * @method _isWhiteListed
-   *
-   * @param  {String}      options.tag
-   * @param  {Object}      options.props
-   *
-   * @return {Boolean}
-   *
-   * @private
-   */
-  _isWhiteListed ({ tag, props }) {
-    return this.blackListedBlockTags.indexOf(tag) === -1 && this.blackListedClasses.indexOf(props.className) === -1
-  }
-
-  /**
-   * Returns a boolean telling if node is a heading
-   *
-   * @method _isHeading
-   *
-   * @param  {String}  options.tag
-   *
-   * @return {Boolean}
-   *
-   * @private
-   */
-  _isHeading ({ tag }) {
-    return this.headings.indexOf(tag) > -1
-  }
-
-  /**
-   * Returns the string representation of a given node and
-   * it's child. Also filters for blackListed nodes
-   *
-   * @method _nodeToString
-   *
-   * @param  {Object}     node
-   *
-   * @return {String}
-   *
-   * @private
-   */
-  _nodeToString (node) {
-    if (node.type === 'element') {
-      if (this._isWhiteListed(node)) {
-        return node.children.map((n) => this._nodeToString(n)).join(this.spacer[node.tag] || '')
-      }
-      return ''
-    }
-
-    return toString(node)
-  }
-
-  /**
-   * Save a new doc to the index. All headings will be sectionized
-   * into search index
-   *
-   * @method addDoc
-   *
-   * @param  {Object} content
-   * @param  {String} permalink
-   */
-  addDoc (content, permalink) {
-    ow(content, ow.object.label('content').hasKeys('children'))
-    ow(content.children, ow.array.label('content.children').nonEmpty)
-    ow(permalink, ow.string.label('permalink').nonEmpty)
-
-    const sections = []
-    let section = null
-
-    content.children
-      .map((child) => {
-        if (this._isHeading(child)) {
-          section = { title: toString(child), body: [], url: `${permalink}${child.children[0].props.href}` }
-          sections.push(section)
-          return
-        }
-
-        if (section) {
-          section.body.push(this._nodeToString(child))
-        }
-      })
-
-    sections.forEach((section) => {
-      this.writeIndex.addDoc({ title: section.title, body: section.body.join(''), url: section.url })
-    })
-  }
-
-  /**
-   * Write search index file to the disk
-   *
-   * @method save
+   * @method clear
    *
    * @return {void}
    */
-  async save () {
-    await fs.outputJSON(this.indexPath, this.writeIndex.toJSON())
+  clear () {
+    this.indexesCache = {}
+  }
+
+  /**
+   * Remove a given index path from the cache
+   *
+   * @method removeFromCache
+   *
+   * @param  {String}        indexPath
+   *
+   * @return {void}
+   */
+  removeFromCache (indexPath) {
+    delete this.indexesCache[indexPath]
+  }
+
+  /**
+   * Load a index from the disk to lunr. After loading
+   * the indexesCache will be populated with the
+   * data
+   *
+   * @method loadIndex
+   *
+   * @param  {String}  indexPath
+   * @param  {String}  mtime
+   *
+   * @return {void}
+   */
+  async loadIndex (indexPath, mtime) {
+    try {
+      const indexJSON = await fs.readJSON(indexPath)
+      if (!indexJSON.docs || !indexJSON.index) {
+        throw new Error('Invalid index')
+      }
+
+      this.indexesCache[indexPath] = {
+        docs: indexJSON.docs,
+        index: lunr.Index.load(indexJSON.index),
+        mtime
+      }
+    } catch (error) {
+    }
   }
 
   /**
@@ -149,12 +78,16 @@ class Search {
    *
    * @return {void}
    */
-  async load () {
-    try {
-      const indexJSON = await fs.readJSON(this.indexPath)
-      this.readIndex = elasticlunr.Index.load(indexJSON)
-    } catch (error) {
+  async load (indexPath) {
+    const stats = await fs.stat(indexPath)
+    const cached = this.indexesCache[indexPath]
+    const lastWriteTime = stats.mtime.toISOString()
+
+    if (!cached || new Date(lastWriteTime) > new Date(cached.mtime)) {
+      await this.loadIndex(indexPath, lastWriteTime)
     }
+
+    return this.indexesCache[indexPath]
   }
 
   /**
@@ -166,22 +99,18 @@ class Search {
    *
    * @return {void}
    */
-  search (term) {
-    if (!this.readIndex) {
-      throw new Error('Make sure to all search.readIndex, before initiating a search')
-    }
+  async search (indexPath, term) {
+    const { docs, index } = await this.load(indexPath)
+    const result = index.search(term)
 
-    return this.readIndex.search(term, {
-      fields: {
-        title: {
-          boost: 2
-        },
-        body: {
-          boost: 1
-        }
-      }
+    /**
+     * Attach doc to the results node
+     */
+    return result.map((node) => {
+      node.doc = docs[node.ref] || {}
+      return node
     })
   }
 }
 
-module.exports = Search
+module.exports = new Search()

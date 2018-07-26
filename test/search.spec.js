@@ -115,10 +115,14 @@ test.group('Search', (group) => {
 
     await search.search(indexFile, 'different')
     const firstMTime = search.indexesCache.get(indexFile).mtime
+
+    index.docs['/hello#hello-world'].title = 'Updated title'
     await index.save()
 
     await sleep(2000)
     await search.search(indexFile, 'different')
+
+    console.log(firstMTime, search.indexesCache.get(indexFile).mtime)
 
     assert.isTrue(new Date(firstMTime) < new Date(search.indexesCache.get(indexFile).mtime))
   }).timeout(4000)

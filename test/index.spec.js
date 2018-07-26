@@ -41,10 +41,10 @@ test.group('Index', (group) => {
     index.addDoc(vfile.contents, '/hello')
 
     assert.deepEqual(index.docs, {
-      '/hello#hello-world': {
+      '/hello': {
         title: 'Hello world',
         body: `This is the first paragraph`,
-        url: '/hello#hello-world'
+        url: '/hello'
       },
       '/hello#this-is-section-2': {
         title: 'This is section 2',
@@ -82,10 +82,10 @@ test.group('Index', (group) => {
 
     index.addDoc(vfile.contents, '/hello')
     assert.deepEqual(index.docs, {
-      '/hello#hello-world': {
+      '/hello': {
         title: 'Hello world',
         body: `This is the first paragraph`,
-        url: '/hello#hello-world'
+        url: '/hello'
       },
       '/hello#this-is-section-2': {
         title: 'This is section 2',
@@ -119,10 +119,10 @@ test.group('Index', (group) => {
 
     index.addDoc(vfile.contents, '/hello')
     assert.deepEqual(index.docs, {
-      '/hello#hello-world': {
+      '/hello': {
         title: 'Hello world',
         body: `This is the first paragraph`,
-        url: '/hello#hello-world'
+        url: '/hello'
       },
       '/hello#this-is-section-2': {
         title: 'This is section 2',
@@ -157,10 +157,10 @@ test.group('Index', (group) => {
 
     index.addDoc(vfile.contents, '/hello')
     assert.deepEqual(index.docs, {
-      '/hello#hello-world': {
+      '/hello': {
         title: 'Hello world',
         body: `This is the first paragraph`,
-        url: '/hello#hello-world'
+        url: '/hello'
       },
       '/hello#this-is-section-2': {
         title: 'This is section 2',
@@ -195,10 +195,10 @@ test.group('Index', (group) => {
 
     index.addDoc(vfile.contents, '/hello')
     assert.deepEqual(index.docs, {
-      '/hello#hello-world': {
+      '/hello': {
         title: 'Hello world',
         body: `This is the first paragraph`,
-        url: '/hello#hello-world'
+        url: '/hello'
       },
       '/hello#this-is-section-2': {
         title: 'This is section 2',
@@ -233,10 +233,10 @@ test.group('Index', (group) => {
 
     index.addDoc(vfile.contents, '/hello')
     assert.deepEqual(index.docs, {
-      '/hello#hello-world': {
+      '/hello': {
         title: 'Hello world',
         body: `This is the first paragraph`,
-        url: '/hello#hello-world'
+        url: '/hello'
       },
       '/hello#this-is-section-2': {
         title: 'This is section 2',
@@ -271,10 +271,10 @@ test.group('Index', (group) => {
 
     index.addDoc(vfile.contents, '/hello')
     assert.deepEqual(index.docs, {
-      '/hello#hello-world': {
+      '/hello': {
         title: 'Hello world',
         body: `This is the first paragraph`,
-        url: '/hello#hello-world'
+        url: '/hello'
       },
       '/hello#this-is-section-2': {
         title: 'This is section 2',
@@ -314,10 +314,10 @@ test.group('Index', (group) => {
 
     index.addDoc(vfile.contents, '/hello')
     assert.deepEqual(index.docs, {
-      '/hello#hello-world': {
+      '/hello': {
         title: 'Hello world',
         body: `This is the first paragraph`,
-        url: '/hello#hello-world'
+        url: '/hello'
       },
       '/hello#this-is-section-2': {
         title: 'This is section 2',
@@ -354,10 +354,10 @@ test.group('Index', (group) => {
 
     index.addDoc(vfile.contents, '/hello')
     assert.deepEqual(index.docs, {
-      '/hello#hello-world': {
+      '/hello': {
         title: 'Hello world',
         body: `This is the first paragraph`,
-        url: '/hello#hello-world'
+        url: '/hello'
       },
       '/hello#this-is-section-2': {
         title: 'This is section 2',
@@ -397,10 +397,10 @@ test.group('Index', (group) => {
 
     index.addDoc(vfile.contents, '/hello')
     assert.deepEqual(index.docs, {
-      '/hello#hello-world': {
+      '/hello': {
         title: 'Hello world',
         body: `This is the first paragraph`,
-        url: '/hello#hello-world'
+        url: '/hello'
       },
       '/hello#this-is-section-2': {
         title: 'This is section 2',
@@ -435,10 +435,10 @@ test.group('Index', (group) => {
 
     index.addDoc(vfile.contents, '/hello')
     assert.deepEqual(index.docs, {
-      '/hello#hello-world': {
+      '/hello': {
         title: 'Hello world',
         body: `This is the first paragraph`,
-        url: '/hello#hello-world'
+        url: '/hello'
       },
       '/hello#this-is-section-2': {
         title: 'This is section 2',
@@ -473,10 +473,10 @@ test.group('Index', (group) => {
 
     index.addDoc(vfile.contents, '/hello')
     assert.deepEqual(index.docs, {
-      '/hello#hello-world': {
+      '/hello': {
         title: 'Hello world',
         body: `This is the first paragraph`,
-        url: '/hello#hello-world'
+        url: '/hello'
       },
       '/hello#this-is-section-2': {
         title: 'This is section 2',
@@ -516,10 +516,10 @@ test.group('Index', (group) => {
 
     index.addDoc(vfile.contents, '/hello')
     assert.deepEqual(index.docs, {
-      '/hello#hello-world': {
+      '/hello': {
         title: 'Hello world',
         body: `This is the first paragraph`,
-        url: '/hello#hello-world'
+        url: '/hello'
       },
       '/hello#this-is-section-2': {
         title: 'This is section 2',

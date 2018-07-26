@@ -12,288 +12,20 @@ const { join } = require('path')
 const fs = require('fs-extra')
 const Markdown = require('@dimerapp/markdown')
 const dedent = require('dedent')
+const search = require('../src/Search')
+const Index = require('../src/Index')
 
-const Search = require('../src/Search')
+const sleep = (time) => new Promise((resolve) => setTimeout(resolve, time))
 
 const indexFile = join(__dirname, 'index.json')
 
 test.group('Search', (group) => {
   group.afterEach(async () => {
+    search.clearCache()
     await fs.remove(indexFile)
   })
 
-  test('save each section of markdown as a document', async (assert) => {
-    const search = new Search(indexFile)
-    const content = dedent`
-    # Hello world
-
-    This is the first paragraph
-
-    ## This is section 2
-    Here's the section 2 content
-
-    ## This is section 3
-    Here's the section 3 content
-    `
-
-    const markdown = new Markdown(content)
-    const vfile = await markdown.toJSON()
-
-    search.addDoc(vfile.contents, '/hello')
-    assert.deepEqual(search.writeIndex.toJSON().documentStore.docs, {
-      '/hello#this-is-section-2': {
-        title: 'This is section 2',
-        body: `Here's the section 2 content`,
-        url: '/hello#this-is-section-2'
-      },
-      '/hello#this-is-section-3': {
-        title: 'This is section 3',
-        body: `Here's the section 3 content`,
-        url: '/hello#this-is-section-3'
-      }
-    })
-  })
-
-  test('do not index pre blocks', async (assert) => {
-    const search = new Search(indexFile)
-    const content = dedent`
-    # Hello world
-
-    This is the first paragraph
-
-    ## This is section 2
-    Here's the section 2 content
-
-    \`\`\`js
-    var a = require('a')
-    \`\`\`
-
-    ## This is section 3
-    Here's the section 3 content
-    `
-
-    const markdown = new Markdown(content)
-    const vfile = await markdown.toJSON()
-
-    search.addDoc(vfile.contents, '/hello')
-    assert.deepEqual(search.writeIndex.toJSON().documentStore.docs, {
-      '/hello#this-is-section-2': {
-        title: 'This is section 2',
-        body: `Here's the section 2 content`,
-        url: '/hello#this-is-section-2'
-      },
-      '/hello#this-is-section-3': {
-        title: 'This is section 3',
-        body: `Here's the section 3 content`,
-        url: '/hello#this-is-section-3'
-      }
-    })
-  })
-
-  test('index inner content of inline decorated content', async (assert) => {
-    const search = new Search(indexFile)
-    const content = dedent`
-    # Hello world
-
-    This is the first paragraph
-
-    ## This is section 2
-    Here's the \`section\` 2 **content**
-
-    ## This is section 3
-    Here's the section 3 content
-    `
-
-    const markdown = new Markdown(content)
-    const vfile = await markdown.toJSON()
-
-    search.addDoc(vfile.contents, '/hello')
-    assert.deepEqual(search.writeIndex.toJSON().documentStore.docs, {
-      '/hello#this-is-section-2': {
-        title: 'This is section 2',
-        body: `Here's the section 2 content`,
-        url: '/hello#this-is-section-2'
-      },
-      '/hello#this-is-section-3': {
-        title: 'This is section 3',
-        body: `Here's the section 3 content`,
-        url: '/hello#this-is-section-3'
-      }
-    })
-  })
-
-  test('index inner content of list items', async (assert) => {
-    const search = new Search(indexFile)
-    const content = dedent`
-    # Hello world
-
-    This is the first paragraph
-
-    ## This is section 2
-    - Here's the section 2 content
-    - Item 2
-
-    ## This is section 3
-    Here's the section 3 content
-    `
-
-    const markdown = new Markdown(content)
-    const vfile = await markdown.toJSON()
-
-    search.addDoc(vfile.contents, '/hello')
-    assert.deepEqual(search.writeIndex.toJSON().documentStore.docs, {
-      '/hello#this-is-section-2': {
-        title: 'This is section 2',
-        body: `Here's the section 2 content Item 2`,
-        url: '/hello#this-is-section-2'
-      },
-      '/hello#this-is-section-3': {
-        title: 'This is section 3',
-        body: `Here's the section 3 content`,
-        url: '/hello#this-is-section-3'
-      }
-    })
-  })
-
-  test('index inner content of ordered list items', async (assert) => {
-    const search = new Search(indexFile)
-    const content = dedent`
-    # Hello world
-
-    This is the first paragraph
-
-    ## This is section 2
-    1. Here's the section 2 content
-    2. Item 2
-
-    ## This is section 3
-    Here's the section 3 content
-    `
-
-    const markdown = new Markdown(content)
-    const vfile = await markdown.toJSON()
-
-    search.addDoc(vfile.contents, '/hello')
-    assert.deepEqual(search.writeIndex.toJSON().documentStore.docs, {
-      '/hello#this-is-section-2': {
-        title: 'This is section 2',
-        body: `Here's the section 2 content Item 2`,
-        url: '/hello#this-is-section-2'
-      },
-      '/hello#this-is-section-3': {
-        title: 'This is section 3',
-        body: `Here's the section 3 content`,
-        url: '/hello#this-is-section-3'
-      }
-    })
-  })
-
-  test('index inner content of todo items', async (assert) => {
-    const search = new Search(indexFile)
-    const content = dedent`
-    # Hello world
-
-    This is the first paragraph
-
-    ## This is section 2
-    -  [ ] Here's the section 2 content
-    -  [x] Item 2
-
-    ## This is section 3
-    Here's the section 3 content
-    `
-
-    const markdown = new Markdown(content)
-    const vfile = await markdown.toJSON()
-
-    search.addDoc(vfile.contents, '/hello')
-    assert.deepEqual(search.writeIndex.toJSON().documentStore.docs, {
-      '/hello#this-is-section-2': {
-        title: 'This is section 2',
-        body: `Here's the section 2 content Item 2`,
-        url: '/hello#this-is-section-2'
-      },
-      '/hello#this-is-section-3': {
-        title: 'This is section 3',
-        body: `Here's the section 3 content`,
-        url: '/hello#this-is-section-3'
-      }
-    })
-  })
-
-  test('index inner content of todo items', async (assert) => {
-    const search = new Search(indexFile)
-    const content = dedent`
-    # Hello world
-
-    This is the first paragraph
-
-    ## This is section 2
-    -  [ ] Here's the section 2 content
-    -  [x] Item 2
-
-    ## This is section 3
-    Here's the section 3 content
-    `
-
-    const markdown = new Markdown(content)
-    const vfile = await markdown.toJSON()
-
-    search.addDoc(vfile.contents, '/hello')
-    assert.deepEqual(search.writeIndex.toJSON().documentStore.docs, {
-      '/hello#this-is-section-2': {
-        title: 'This is section 2',
-        body: `Here's the section 2 content Item 2`,
-        url: '/hello#this-is-section-2'
-      },
-      '/hello#this-is-section-3': {
-        title: 'This is section 3',
-        body: `Here's the section 3 content`,
-        url: '/hello#this-is-section-3'
-      }
-    })
-  })
-
-  test('ignore codeblocks inside macros', async (assert) => {
-    const search = new Search(indexFile)
-    const content = dedent`
-    # Hello world
-
-    This is the first paragraph
-
-    ## This is section 2
-    Here's the section 2 content
-
-    [note]
-    \`\`\`js
-    var a = require('a')
-    \`\`\`
-    [/note]
-
-    ## This is section 3
-    Here's the section 3 content
-    `
-
-    const markdown = new Markdown(content)
-    const vfile = await markdown.toJSON()
-
-    search.addDoc(vfile.contents, '/hello')
-    assert.deepEqual(search.writeIndex.toJSON().documentStore.docs, {
-      '/hello#this-is-section-2': {
-        title: 'This is section 2',
-        body: `Here's the section 2 content`,
-        url: '/hello#this-is-section-2'
-      },
-      '/hello#this-is-section-3': {
-        title: 'This is section 3',
-        body: `Here's the section 3 content`,
-        url: '/hello#this-is-section-3'
-      }
-    })
-  })
-
-  test('make sections of nested headings', async (assert) => {
-    const search = new Search(indexFile)
+  test('load index from disk and search', async (assert) => {
     const content = dedent`
     # Hello world
 
@@ -306,243 +38,22 @@ test.group('Search', (group) => {
     Here's the section 2.1 content
 
     ## This is section 3
-    Here's the section 3 content
+    Some different content
     `
 
     const markdown = new Markdown(content)
     const vfile = await markdown.toJSON()
 
-    search.addDoc(vfile.contents, '/hello')
-    assert.deepEqual(search.writeIndex.toJSON().documentStore.docs, {
-      '/hello#this-is-section-2': {
-        title: 'This is section 2',
-        body: `Here's the section 2 content`,
-        url: '/hello#this-is-section-2'
-      },
-      '/hello#this-is-section-21': {
-        title: 'This is section 2.1',
-        body: `Here's the section 2.1 content`,
-        url: '/hello#this-is-section-21'
-      },
-      '/hello#this-is-section-3': {
-        title: 'This is section 3',
-        body: `Here's the section 3 content`,
-        url: '/hello#this-is-section-3'
-      }
-    })
-  })
+    const index = new Index(indexFile)
+    index.addDoc(vfile.contents, '/hello')
+    await index.save()
 
-  test('index inner content of ordered list items', async (assert) => {
-    const search = new Search(indexFile)
-    const content = dedent`
-    # Hello world
-
-    This is the first paragraph
-
-    ## This is section 2
-    1. Here's the section 2 content
-    2. Item 2
-
-    ## This is section 3
-    Here's the section 3 content
-    `
-
-    const markdown = new Markdown(content)
-    const vfile = await markdown.toJSON()
-
-    search.addDoc(vfile.contents, '/hello')
-    assert.deepEqual(search.writeIndex.toJSON().documentStore.docs, {
-      '/hello#this-is-section-2': {
-        title: 'This is section 2',
-        body: `Here's the section 2 content Item 2`,
-        url: '/hello#this-is-section-2'
-      },
-      '/hello#this-is-section-3': {
-        title: 'This is section 3',
-        body: `Here's the section 3 content`,
-        url: '/hello#this-is-section-3'
-      }
-    })
-  })
-
-  test('index inner content of todo items', async (assert) => {
-    const search = new Search(indexFile)
-    const content = dedent`
-    # Hello world
-
-    This is the first paragraph
-
-    ## This is section 2
-    -  [ ] Here's the section 2 content
-    -  [x] Item 2
-
-    ## This is section 3
-    Here's the section 3 content
-    `
-
-    const markdown = new Markdown(content)
-    const vfile = await markdown.toJSON()
-
-    search.addDoc(vfile.contents, '/hello')
-    assert.deepEqual(search.writeIndex.toJSON().documentStore.docs, {
-      '/hello#this-is-section-2': {
-        title: 'This is section 2',
-        body: `Here's the section 2 content Item 2`,
-        url: '/hello#this-is-section-2'
-      },
-      '/hello#this-is-section-3': {
-        title: 'This is section 3',
-        body: `Here's the section 3 content`,
-        url: '/hello#this-is-section-3'
-      }
-    })
-  })
-
-  test('index inner content of todo items', async (assert) => {
-    const search = new Search(indexFile)
-    const content = dedent`
-    # Hello world
-
-    This is the first paragraph
-
-    ## This is section 2
-    -  [ ] Here's the section 2 content
-    -  [x] Item 2
-
-    ## This is section 3
-    Here's the section 3 content
-    `
-
-    const markdown = new Markdown(content)
-    const vfile = await markdown.toJSON()
-
-    search.addDoc(vfile.contents, '/hello')
-    assert.deepEqual(search.writeIndex.toJSON().documentStore.docs, {
-      '/hello#this-is-section-2': {
-        title: 'This is section 2',
-        body: `Here's the section 2 content Item 2`,
-        url: '/hello#this-is-section-2'
-      },
-      '/hello#this-is-section-3': {
-        title: 'This is section 3',
-        body: `Here's the section 3 content`,
-        url: '/hello#this-is-section-3'
-      }
-    })
-  })
-
-  test('ignore codeblocks inside macros', async (assert) => {
-    const search = new Search(indexFile)
-    const content = dedent`
-    # Hello world
-
-    This is the first paragraph
-
-    ## This is section 2
-    Here's the section 2 content
-
-    [note]
-    \`\`\`js
-    var a = require('a')
-    \`\`\`
-    [/note]
-
-    ## This is section 3
-    Here's the section 3 content
-    `
-
-    const markdown = new Markdown(content)
-    const vfile = await markdown.toJSON()
-
-    search.addDoc(vfile.contents, '/hello')
-    assert.deepEqual(search.writeIndex.toJSON().documentStore.docs, {
-      '/hello#this-is-section-2': {
-        title: 'This is section 2',
-        body: `Here's the section 2 content`,
-        url: '/hello#this-is-section-2'
-      },
-      '/hello#this-is-section-3': {
-        title: 'This is section 3',
-        body: `Here's the section 3 content`,
-        url: '/hello#this-is-section-3'
-      }
-    })
-  })
-
-  test('write index to disk', async (assert) => {
-    const search = new Search(indexFile)
-    const content = dedent`
-    # Hello world
-
-    This is the first paragraph
-
-    ## This is section 2
-    Here's the section 2 content
-
-    ### This is section 2.1
-    Here's the section 2.1 content
-
-    ## This is section 3
-    Here's the section 3 content
-    `
-
-    const markdown = new Markdown(content)
-    const vfile = await markdown.toJSON()
-
-    search.addDoc(vfile.contents, '/hello')
-    await search.save()
-
-    const index = await fs.readJSON(indexFile)
-
-    assert.deepEqual(index.documentStore.docs, {
-      '/hello#this-is-section-2': {
-        title: 'This is section 2',
-        body: `Here's the section 2 content`,
-        url: '/hello#this-is-section-2'
-      },
-      '/hello#this-is-section-21': {
-        title: 'This is section 2.1',
-        body: `Here's the section 2.1 content`,
-        url: '/hello#this-is-section-21'
-      },
-      '/hello#this-is-section-3': {
-        title: 'This is section 3',
-        body: `Here's the section 3 content`,
-        url: '/hello#this-is-section-3'
-      }
-    })
-  })
-
-  test('load index from disk', async (assert) => {
-    const search = new Search(indexFile)
-    const content = dedent`
-    # Hello world
-
-    This is the first paragraph
-
-    ## This is section 2
-    Here's the section 2 content
-
-    ### This is section 2.1
-    Here's the section 2.1 content
-
-    ## This is section 3
-    Here's the section 3 content
-    `
-
-    const markdown = new Markdown(content)
-    const vfile = await markdown.toJSON()
-
-    search.addDoc(vfile.contents, '/hello')
-    await search.save()
-    await search.load()
-
-    const output = search.search('section 3')
+    const output = await search.search(indexFile, 'different')
     assert.equal(output[0].ref, '/hello#this-is-section-3')
+    assert.deepEqual(output[0].doc, index.docs['/hello#this-is-section-3'])
   })
 
-  test('throw error when attempting to search without search index', async (assert) => {
-    const search = new Search(indexFile)
+  test('do not reload index when cached', async (assert) => {
     const content = dedent`
     # Hello world
 
@@ -555,16 +66,95 @@ test.group('Search', (group) => {
     Here's the section 2.1 content
 
     ## This is section 3
-    Here's the section 3 content
+    Some different content
     `
 
     const markdown = new Markdown(content)
     const vfile = await markdown.toJSON()
 
-    search.addDoc(vfile.contents, '/hello')
-    await search.load()
+    const index = new Index(indexFile)
+    index.addDoc(vfile.contents, '/hello')
+    await index.save()
 
-    const output = () => search.search('section 3')
-    assert.throw(output, 'Make sure to all search.readIndex, before initiating a search')
+    await search.search(indexFile, 'different')
+
+    const _loadIndex = search.loadIndex
+    search.loadIndex = function () {
+      throw new Error('Should not be called')
+    }
+
+    const output = await search.search(indexFile, 'different')
+    assert.equal(output[0].ref, '/hello#this-is-section-3')
+    assert.deepEqual(output[0].doc, index.docs['/hello#this-is-section-3'])
+
+    search.loadIndex = _loadIndex
+  })
+
+  test('reload index when index is written back to the disk', async (assert) => {
+    const content = dedent`
+    # Hello world
+
+    This is the first paragraph
+
+    ## This is section 2
+    Here's the section 2 content
+
+    ### This is section 2.1
+    Here's the section 2.1 content
+
+    ## This is section 3
+    Some different content
+    `
+
+    const markdown = new Markdown(content)
+    const vfile = await markdown.toJSON()
+
+    const index = new Index(indexFile)
+    index.addDoc(vfile.contents, '/hello')
+    await index.save()
+
+    await search.search(indexFile, 'different')
+    const firstMTime = search.indexesCache.get(indexFile).mtime
+    const firstSize = search.indexesCache.get(indexFile).size
+
+    index.docs['/hello#hello-world'].title = 'Updated title'
+    await index.save()
+
+    await sleep(4000)
+    await search.search(indexFile, 'different')
+
+    assert.isTrue((firstMTime < search.indexesCache.get(indexFile).mtime || firstSize !== search.indexesCache.get(indexFile).size))
+  }).timeout(8000)
+
+  test('invalid cache indexes when index file is missing from the disk', async (assert) => {
+    const content = dedent`
+    # Hello world
+
+    This is the first paragraph
+
+    ## This is section 2
+    Here's the section 2 content
+
+    ### This is section 2.1
+    Here's the section 2.1 content
+
+    ## This is section 3
+    Some different content
+    `
+
+    const markdown = new Markdown(content)
+    const vfile = await markdown.toJSON()
+
+    const index = new Index(indexFile)
+    index.addDoc(vfile.contents, '/hello')
+    await index.save()
+
+    await search.search(indexFile, 'hello')
+
+    assert.isDefined(search.indexesCache.get(indexFile).mtime)
+    await fs.remove(indexFile)
+
+    await search.revalidate()
+    assert.deepEqual(search.indexesCache, new Map())
   })
 })

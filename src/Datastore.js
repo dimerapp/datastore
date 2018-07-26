@@ -11,8 +11,10 @@ const fs = require('fs-extra')
 const { join, extname } = require('path')
 const _ = require('lodash')
 const ow = require('ow')
+const utils = require('@dimerapp/utils')
 
 const Db = require('./Db')
+const Index = require('./Index')
 const Search = require('./Search')
 
 /**
@@ -23,29 +25,11 @@ const Search = require('./Search')
  * @param {String} storageDir
  */
 class Datastore {
-  constructor (storageDir) {
-    ow(storageDir, ow.string.label('storageDir').nonEmpty)
-    this.baseDir = storageDir
+  constructor (baseDir) {
+    ow(baseDir, ow.string.label('baseDir').nonEmpty)
+    this.paths = utils.paths(baseDir)
 
-    this.db = new Db(join(this.baseDir, 'meta.json'))
-    this.searchJar = {}
-  }
-
-  /**
-   * Removes trailing and leading slashes from the permalink. This
-   * should always be done when matching permalinks, and do not
-   * mutate the value of permalink saved by the end user.
-   *
-   * @method _normalizePermalink
-   *
-   * @param  {String}            permalink
-   *
-   * @return {String}
-   *
-   * @private
-   */
-  _normalizePermalink (permalink) {
-    return permalink.replace(/^\/|\/$/, '')
+    this.db = new Db(this.paths.metaFile())
   }
 
   /**
@@ -91,16 +75,24 @@ class Datastore {
    * @return {void}
    */
   async saveDoc (versionNo, filePath, doc) {
+    /**
+     * Validations before consuming data
+     */
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
     ow(filePath, ow.string.label('filePath').nonEmpty)
     ow(doc, ow.object.label('doc').hasKeys('content', 'permalink'))
-    filePath = this._normalizePath(filePath)
+    ow(doc.permalink, ow.string.label('doc.permalink').nonEmpty)
+
+    /**
+     * Normalize the file path and convert it to .json file
+     */
+    const jsonPath = this._normalizePath(filePath)
 
     /**
      * Make sure the permalink is not duplicate
      */
-    const existingDoc = this.db.getDocByPermalink(versionNo, doc.permalink)
-    if (existingDoc && existingDoc.jsonPath !== filePath) {
+    const existingDoc = this.db.duplicateDoc(versionNo, doc.permalink, jsonPath)
+    if (existingDoc) {
       const error = new Error(`Duplicate permalink ${doc.permalink}`)
       error.doc = existingDoc
       throw error
@@ -114,12 +106,19 @@ class Datastore {
     /**
      * Save required properties to metaData
      */
-    metaData.jsonPath = filePath
+    metaData.jsonPath = jsonPath
     metaData.category = metaData.category || 'root'
     metaData.title = metaData.title || this._getTitle(doc.content)
 
+    /**
+     * Save actual file
+     */
+    await fs.outputJSON(join(this.paths.versionPath(versionNo), jsonPath), doc.content)
+
+    /**
+     * Add to db
+     */
     this.db.addDoc(versionNo, metaData)
-    await fs.outputJSON(join(this.baseDir, versionNo, filePath), doc.content)
   }
 
   /**
@@ -132,11 +131,18 @@ class Datastore {
    * @return {void}
    */
   async syncVersions (versions) {
+    /**
+     * An array of versions that already exists in the database
+     */
     const existingVersions = this.db.getVersions().map((version) => version)
-    const versionsRemoved = _.differenceBy(existingVersions, versions, (version) => version.no)
 
     /**
-     * Update/Add versions
+     * An array of versions removed in the new set of versions we have received
+     */
+    const removed = _.differenceBy(existingVersions, versions, (version) => version.no)
+
+    /**
+     * Update existing or add new versions
      */
     versions.forEach((version) => (this.db.saveVersion(version)))
 
@@ -144,19 +150,22 @@ class Datastore {
      * Pulling from the latest database copy to get the normalized
      * copy of versions
      */
-    const versionsAdded = _.differenceBy(this.db.getVersions(), existingVersions, (version) => version.no)
+    const added = _.differenceBy(this.db.getVersions(), existingVersions, (version) => version.no)
 
     /**
      * Remove non-existing versions
      */
-    versionsRemoved.forEach((version) => (this.db.removeVersion(version.no)))
+    removed.forEach((version) => (this.db.removeVersion(version.no)))
 
     /**
-     * Remove content for the versions which are removed
+     * Remove content for all versions which are removed. This includes
+     * the version files and search indexes.
      */
-    await Promise.all([versionsRemoved.map((version) => fs.remove(join(this.baseDir, version.no)))])
+    await Promise.all([removed.map((version) => {
+      return fs.remove(this.paths.versionPath(version.no))
+    })])
 
-    return { added: versionsAdded, removed: versionsRemoved }
+    return { added, removed }
   }
 
   /**
@@ -170,13 +179,23 @@ class Datastore {
    * @return {void}
    */
   async removeDoc (versionNo, filePath) {
+    /**
+     * Validations
+     */
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
     ow(filePath, ow.string.label('filePath').nonEmpty)
 
-    filePath = this._normalizePath(filePath)
+    const jsonPath = this._normalizePath(filePath)
 
-    await fs.remove(join(this.baseDir, versionNo, filePath))
-    this.db.removeDoc(versionNo, filePath)
+    /**
+     * Drop the actual content file from disk
+     */
+    await fs.remove(join(this.paths.versionPath(versionNo), jsonPath))
+
+    /**
+     * Update db
+     */
+    this.db.removeDoc(versionNo, jsonPath)
   }
 
   /**
@@ -207,10 +226,14 @@ class Datastore {
    * @return {Object}
    */
   async loadContent (versionNo, doc) {
+    /**
+     * Validations
+     */
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
     ow(doc, ow.object.label('doc').hasKeys('jsonPath'))
+    ow(doc.jsonPath, ow.string.label('doc.jsonPath').nonEmpty)
 
-    const content = await fs.readJSON(join(this.baseDir, versionNo, doc.jsonPath))
+    const content = await fs.readJSON(join(this.paths.versionPath(versionNo), doc.jsonPath))
     return Object.assign({ content }, doc)
   }
 
@@ -228,11 +251,19 @@ class Datastore {
   async getTree (versionNo, limit = 0, withContent = false) {
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
 
+    /**
+     * If version doesn't exists, return null. This is to
+     * differentiate between non-existing version and
+     * version with no docs.
+     */
     const version = this.db.getVersion(versionNo)
     if (!version) {
       return null
     }
 
+    /**
+     * Order docs by jsonPath
+     */
     let docs = _.orderBy(version.docs, 'jsonPath')
 
     /**
@@ -261,6 +292,7 @@ class Datastore {
         category = { category: doc.category, docs: [] }
         categories.push(category)
       }
+
       category.docs.push(doc)
 
       return categories
@@ -278,17 +310,11 @@ class Datastore {
    * @return {Object}
    */
   async getDoc (versionNo, filePath) {
-    ow(versionNo, ow.string.label('versionNo').nonEmpty)
-    ow(filePath, ow.string.label('filePath').nonEmpty)
+    const doc = this.db.getDoc(versionNo, this._normalizePath(filePath))
 
-    const version = this.db.getVersion(versionNo)
-
-    if (!version) {
-      return null
-    }
-
-    const doc = version.docs.find((doc) => doc.jsonPath === this._normalizePath(filePath))
-
+    /**
+     * Return null if doc is missing
+     */
     if (!doc) {
       return null
     }
@@ -307,19 +333,11 @@ class Datastore {
    * @return {Object}
    */
   async getDocByPermalink (versionNo, permalink) {
-    ow(versionNo, ow.string.label('versionNo').nonEmpty)
-    ow(permalink, ow.string.label('permalink').nonEmpty)
+    const doc = this.db.getDocByPermalink(versionNo, permalink)
 
-    const version = this.db.getVersion(versionNo)
-
-    if (!version) {
-      return null
-    }
-
-    const doc = version.docs.find((doc) => {
-      return this._normalizePermalink(doc.permalink) === this._normalizePermalink(permalink)
-    })
-
+    /**
+     * Return null if doc is missing
+     */
     if (!doc) {
       return null
     }
@@ -339,25 +357,40 @@ class Datastore {
    * @return {String|Null}
    */
   redirectedPermalink (versionNo, permalink) {
+    /**
+     * Validations
+     */
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
     ow(permalink, ow.string.label('permalink').nonEmpty)
 
+    /**
+     * Return null if version is missing
+     */
     const version = this.db.getVersion(versionNo)
-
     if (!version) {
       return null
     }
 
+    /**
+     * Get the doc in which the redirects are same
+     * the current permalink
+     */
     const doc = version.docs
       .filter((doc) => Array.isArray(doc.redirects))
       .find((doc) => {
-        return _.includes(doc.redirects.map(this._normalizePermalink.bind(this)), this._normalizePermalink(permalink))
+        return _.includes(doc.redirects.map(utils.permalink.normalize), utils.permalink.normalize(permalink))
       })
 
+    /**
+     * Return null if doc is missing
+     */
     if (!doc) {
       return null
     }
 
+    /**
+     * Otherwise return the permalink
+     */
     return doc.permalink
   }
 
@@ -387,24 +420,6 @@ class Datastore {
   }
 
   /**
-   * Returns the search class instance for a given version
-   *
-   * @method searchFor
-   *
-   * @param  {String}   versionNo
-   * @param  {Boolean}  forceNew
-   *
-   * @return {Search}
-   */
-  searchFor (versionNo, forceNew = false) {
-    if (!this.searchJar[versionNo] || forceNew) {
-      this.searchJar[versionNo] = new Search(join(this.baseDir, versionNo, 'search.json'))
-    }
-
-    return this.searchJar[versionNo]
-  }
-
-  /**
    * Creates a search index for a given version
    *
    * @method indexVersion
@@ -414,16 +429,23 @@ class Datastore {
    * @return {void}
    */
   async indexVersion (versionNo) {
-    const search = this.searchFor(versionNo, true)
-    const categories = await this.getTree(versionNo, 0, true)
+    const index = new Index(this.paths.searchIndexFile(versionNo))
 
-    categories.forEach(({ docs }) => {
+    /**
+     * Get the entire tree with the loaded content
+     */
+    const tree = await this.getTree(versionNo, 0, true)
+
+    tree.forEach(({ docs }) => {
       docs.forEach((doc) => {
-        search.addDoc(doc.content, doc.permalink)
+        index.addDoc(doc.content, doc.permalink)
       })
     })
 
-    await search.save()
+    /**
+     * Write index to the disk
+     */
+    await index.save()
   }
 
   /**
@@ -437,12 +459,7 @@ class Datastore {
    * @return {Array}
    */
   async search (versionNo, term) {
-    const search = this.searchFor(versionNo)
-    if (!search.readIndex) {
-      await search.load()
-    }
-
-    return search.search(term)
+    return Search.search(this.paths.searchIndexFile(versionNo), term)
   }
 
   /**
@@ -457,7 +474,7 @@ class Datastore {
    */
   async load (clean = false) {
     if (clean) {
-      await fs.remove(this.baseDir)
+      await fs.remove(this.paths.apiPath())
     }
 
     await this.db.load()

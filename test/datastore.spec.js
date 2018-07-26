@@ -16,17 +16,18 @@ const _ = require('lodash')
 
 const Datastore = require('../src/Datastore')
 
-const domainDir = join(__dirname, '..', 'sites', 'adonisjs.dimerapp.com')
+const baseDir = join(__dirname, 'sites')
+const domainDir = join(baseDir, 'dist', '__api')
 
 test.group('Datastore', (group) => {
   group.afterEach(async () => {
-    await fs.remove(join(__dirname, '..', 'sites'))
+    await fs.remove(baseDir)
   })
 
   test('raise error when versionNo or fileName is missing when saving doc', async (assert) => {
     assert.plan(1)
 
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
 
     try {
       await store.saveDoc()
@@ -36,7 +37,7 @@ test.group('Datastore', (group) => {
   })
 
   test('save markdown json and it\'s meta data to the disk', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     await store.saveDoc('1.0.0', 'foo.md', {
@@ -77,7 +78,7 @@ test.group('Datastore', (group) => {
   })
 
   test('pull title from json when is not inside meta data', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const nodes = {
@@ -124,7 +125,7 @@ test.group('Datastore', (group) => {
   })
 
   test('set category to root when is not inside meta data', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const nodes = {
@@ -166,7 +167,7 @@ test.group('Datastore', (group) => {
   })
 
   test('sync versions', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const { added, removed } = await store.syncVersions([
@@ -209,7 +210,7 @@ test.group('Datastore', (group) => {
   })
 
   test('sync versions with existing content should work fine', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const nodes = {
@@ -278,7 +279,7 @@ test.group('Datastore', (group) => {
   })
 
   test('sync versions should remove the one\'s not inside the array', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const nodes = {
@@ -341,7 +342,7 @@ test.group('Datastore', (group) => {
   })
 
   test('sync versions should add the one\'s not already exists', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const nodes = {
@@ -400,7 +401,7 @@ test.group('Datastore', (group) => {
   })
 
   test('sync versions should remove the content for one\'s not inside the array', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const nodes = {
@@ -462,7 +463,7 @@ test.group('Datastore', (group) => {
   })
 
   test('remove a given doc', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const nodes = {
@@ -498,7 +499,7 @@ test.group('Datastore', (group) => {
   })
 
   test('skip when removing doc for a non-existing version', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const nodes = {
@@ -541,7 +542,7 @@ test.group('Datastore', (group) => {
   })
 
   test('return an array of versions', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const nodes = {
@@ -575,7 +576,7 @@ test.group('Datastore', (group) => {
   })
 
   test('get docs for an array of version', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const nodes = {
@@ -606,7 +607,7 @@ test.group('Datastore', (group) => {
   })
 
   test('return null when version doesn\'t exists', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const nodes = {
@@ -625,7 +626,7 @@ test.group('Datastore', (group) => {
   })
 
   test('order versions by jsonPath', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const nodes = {
@@ -668,7 +669,7 @@ test.group('Datastore', (group) => {
   })
 
   test('load content for docs', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const nodes = {
@@ -713,7 +714,7 @@ test.group('Datastore', (group) => {
   })
 
   test('limit docs', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const nodes = {
@@ -751,7 +752,7 @@ test.group('Datastore', (group) => {
   })
 
   test('get a single doc', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const nodes = {
@@ -776,7 +777,7 @@ test.group('Datastore', (group) => {
   })
 
   test('return null when single doc is missing', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const nodes = {
@@ -795,7 +796,7 @@ test.group('Datastore', (group) => {
   })
 
   test('get a single doc by permalink', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const nodes = {
@@ -820,7 +821,7 @@ test.group('Datastore', (group) => {
   })
 
   test('return null if doc is missing', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const nodes = {
@@ -839,7 +840,7 @@ test.group('Datastore', (group) => {
   })
 
   test('index docs for a given version', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const template = dedent`
@@ -866,7 +867,7 @@ test.group('Datastore', (group) => {
     await store.indexVersion('1.0.0')
     const indexFile = await fs.readJSON(join(domainDir, '1.0.0', 'search.json'))
 
-    assert.deepEqual(indexFile.documentStore.docs, {
+    assert.deepEqual(indexFile.docs, {
       '/hello#this-is-a-section': {
         title: 'This is a section',
         body: 'Some content here',
@@ -877,7 +878,7 @@ test.group('Datastore', (group) => {
     await store.indexVersion('1.0.1')
     const indexFile1 = await fs.readJSON(join(domainDir, '1.0.1', 'search.json'))
 
-    assert.deepEqual(indexFile1.documentStore.docs, {
+    assert.deepEqual(indexFile1.docs, {
       '/hello#this-is-a-section': {
         title: 'This is a section',
         body: 'Some content here',
@@ -887,7 +888,7 @@ test.group('Datastore', (group) => {
   })
 
   test('search docs for a given term', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const template = dedent`
@@ -938,7 +939,7 @@ test.group('Datastore', (group) => {
   test('raise error when permalink is same', async (assert) => {
     assert.plan(2)
 
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     await store.saveDoc('1.0.0', 'foo.md', {
@@ -975,7 +976,7 @@ test.group('Datastore', (group) => {
   test('work fine when updating doc with same permalink', async (assert) => {
     assert.plan(2)
 
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const nodes = {
@@ -1025,7 +1026,7 @@ test.group('Datastore', (group) => {
   })
 
   test('indexing version should start from scratch', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const template = dedent`
@@ -1053,7 +1054,7 @@ test.group('Datastore', (group) => {
   })
 
   test('get the permalink of the actual doc when redirected permalink is accessed', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const template = dedent`
@@ -1077,7 +1078,7 @@ test.group('Datastore', (group) => {
   })
 
   test('return null for redirected permalink when doc has no redirects', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const template = dedent`
@@ -1100,7 +1101,7 @@ test.group('Datastore', (group) => {
   })
 
   test('get a single doc by permalink by normalizing slashes', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const nodes = {
@@ -1125,7 +1126,7 @@ test.group('Datastore', (group) => {
   })
 
   test('load store from a blank slate', async (assert) => {
-    const store = new Datastore(domainDir)
+    const store = new Datastore(baseDir)
     await store.db.load()
 
     const nodes = {

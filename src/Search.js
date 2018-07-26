@@ -82,7 +82,7 @@ class Search {
   async getMTime (filePath) {
     try {
       const stats = await fs.stat(filePath)
-      return stats.mtime.toISOString()
+      return stats.mtimeMs
     } catch (error) {
       return 0
     }
@@ -129,7 +129,7 @@ class Search {
     const cached = this.indexesCache.get(indexPath)
     const lastWriteTime = await this.getMTime(indexPath)
 
-    if (!cached || new Date(lastWriteTime) > new Date(cached.mtime)) {
+    if (!cached || lastWriteTime > cached.mtime) {
       await this.loadIndex(indexPath, lastWriteTime)
     }
 

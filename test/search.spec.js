@@ -122,7 +122,7 @@ test.group('Search', (group) => {
     await sleep(3000)
     await search.search(indexFile, 'different')
 
-    assert.isTrue(new Date(firstMTime) < new Date(search.indexesCache.get(indexFile).mtime))
+    assert.isTrue(firstMTime < search.indexesCache.get(indexFile).mtime)
   }).timeout(4000)
 
   test('invalid cache indexes when index file is missing from the disk', async (assert) => {

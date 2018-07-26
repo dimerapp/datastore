@@ -9,6 +9,7 @@
 
 const fs = require('fs-extra')
 const lunr = require('lunr')
+const _ = require('lodash')
 
 /**
  * Search by loading the pre-build indexes
@@ -29,6 +30,110 @@ class Search {
    */
   get paths () {
     return Array.from(this.indexesCache.keys())
+  }
+
+  /**
+   * Loops over the search results position meta data and converts
+   * them into a flat array of positions
+   *
+   * @method _collectPositions
+   *
+   * @param  {Object}          node
+   *
+   * @return {Object}
+   *
+   * @private
+   */
+  _collectPositions (node) {
+    return _.reduce(node.matchData.metadata, (result, keyword) => {
+      if (keyword.title) {
+        result.title = result.title.concat(keyword.title.position)
+      }
+
+      if (keyword.body) {
+        result.body = result.body.concat(keyword.body.position)
+      }
+      return result
+    }, { title: [], body: [] })
+  }
+
+  /**
+   * Converts an array of positions to an array of marks by
+   * reading the substring from text
+   *
+   * @method _positionToMarks
+   *
+   * @param  {Array}         positions
+   * @param  {String}         text
+   *
+   * @return {Array}
+   *
+   * @private
+   */
+  _positionToMarks (positions, text) {
+    let lastIndex = 0
+
+    /**
+     * Return a single node when text is empty
+     */
+    if (!text) {
+      return [{ type: 'raw', text }]
+    }
+
+    const marks = _.reduce(positions, (tokens, [start, end]) => {
+      /**
+       * First token will be raw
+       */
+      const raw = text.substr(lastIndex, start - lastIndex)
+      tokens.push({ text: raw, type: 'raw' })
+
+      /**
+       * Next will be the mark
+       */
+      const mark = text.substr(start, end)
+      tokens.push({ text: mark, type: 'mark' })
+
+      /**
+       * Update last index from start from the correct order
+       */
+      lastIndex = start + end
+
+      return tokens
+    }, [])
+
+    /**
+     * If last index is smaller than the text length, use all
+     * remaining text as raw node
+     */
+    if (lastIndex < text.length) {
+      marks.push({ type: 'raw', text: text.substring(lastIndex, text.length) })
+    }
+
+    return marks
+  }
+
+  /**
+   * Convert each search node into a node with marks
+   *
+   * @method _nodeToMarks
+   *
+   * @param  {Object}     node
+   * @param  {Object}     doc
+   *
+   * @return {Object}
+   *
+   * @private
+   */
+  _nodeToMarks (node, doc) {
+    if (!doc) {
+      return { marks: null, ref: node.ref }
+    }
+
+    const { title, body } = this._collectPositions(node)
+    const titleMarks = this._positionToMarks(title, doc.title)
+    const bodyMarks = this._positionToMarks(body, doc.body)
+
+    return { marks: { title: titleMarks, body: bodyMarks }, ref: node.ref }
   }
 
   /**
@@ -164,10 +269,7 @@ class Search {
     /**
      * Attach doc to the results node
      */
-    return result.map((node) => {
-      node.doc = index.docs[node.ref] || {}
-      return node
-    })
+    return result.map((node) => this._nodeToMarks(node, index.docs[node.ref]))
   }
 }
 

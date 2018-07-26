@@ -412,7 +412,7 @@ test.group('Db', (group) => {
     assert.isTrue(db.isFileValid())
   })
 
-  test('return undefined when version is missing', async (assert) => {
+  test('return null when version is missing', async (assert) => {
     const db = new Db(dbFile, { autoload: false })
     await fs.outputJSON(dbFile, {
       versions: [
@@ -429,7 +429,7 @@ test.group('Db', (group) => {
 
     await db.load()
 
-    assert.isUndefined(db.getVersion('1.0.1'))
+    assert.isNull(db.getVersion('1.0.1'))
   })
 
   test('return a specific doc', async (assert) => {
@@ -462,7 +462,7 @@ test.group('Db', (group) => {
     assert.isTrue(db.isFileValid())
   })
 
-  test('return undefined when version is missing', async (assert) => {
+  test('return null when version is missing', async (assert) => {
     const db = new Db(dbFile, { autoload: false })
     await fs.outputJSON(dbFile, {
       versions: [
@@ -478,10 +478,10 @@ test.group('Db', (group) => {
     })
 
     await db.load()
-    assert.isUndefined(db.getDocByPermalink('1.0.1', 'foo'))
+    assert.isNull(db.getDocByPermalink('1.0.1', 'foo'))
   })
 
-  test('return undefined when doc is missing', async (assert) => {
+  test('return null when doc is missing', async (assert) => {
     const db = new Db(dbFile, { autoload: false })
     await fs.outputJSON(dbFile, {
       versions: [
@@ -497,7 +497,7 @@ test.group('Db', (group) => {
     })
 
     await db.load()
-    assert.isUndefined(db.getDocByPermalink('1.0.0', 'bar'))
+    assert.isNull(db.getDocByPermalink('1.0.0', 'bar'))
   })
 
   test('return true from isFileValid when there are no versions', async (assert) => {

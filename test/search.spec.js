@@ -21,7 +21,7 @@ const indexFile = join(__dirname, 'index.json')
 
 test.group('Search', (group) => {
   group.afterEach(async () => {
-    search.clear()
+    search.clearCache()
     await fs.remove(indexFile)
   })
 
@@ -114,12 +114,44 @@ test.group('Search', (group) => {
     await index.save()
 
     await search.search(indexFile, 'different')
-    const firstMTime = search.indexesCache[indexFile].mtime
+    const firstMTime = search.indexesCache.get(indexFile).mtime
     await index.save()
 
     await sleep(2000)
     await search.search(indexFile, 'different')
 
-    assert.isTrue(new Date(firstMTime) < new Date(search.indexesCache[indexFile].mtime))
+    assert.isTrue(new Date(firstMTime) < new Date(search.indexesCache.get(indexFile).mtime))
+  }).timeout(4000)
+
+  test('invalid cache indexes when index file is missing from the disk', async (assert) => {
+    const content = dedent`
+    # Hello world
+
+    This is the first paragraph
+
+    ## This is section 2
+    Here's the section 2 content
+
+    ### This is section 2.1
+    Here's the section 2.1 content
+
+    ## This is section 3
+    Some different content
+    `
+
+    const markdown = new Markdown(content)
+    const vfile = await markdown.toJSON()
+
+    const index = new Index(indexFile)
+    index.addDoc(vfile.contents, '/hello')
+    await index.save()
+
+    await search.search(indexFile, 'hello')
+
+    assert.isDefined(search.indexesCache.get(indexFile).mtime)
+    await fs.remove(indexFile)
+
+    await search.revalidate()
+    assert.deepEqual(search.indexesCache, new Map())
   }).timeout(4000)
 })

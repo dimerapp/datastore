@@ -10,37 +10,36 @@
 const fs = require('fs-extra')
 const lunr = require('lunr')
 
+/**
+ * Search by loading the pre-build indexes
+ *
+ * @class Search
+ */
 class Search {
   constructor () {
-    this.indexesCache = {}
+    this.indexesCache = new Map()
   }
 
+  /**
+   * Returns an array of paths in cache
+   *
+   * @method paths
+   *
+   * @return {Array}
+   */
   get paths () {
-    return Object.keys(this.indexesCache)
+    return Array.from(this.indexesCache.keys())
   }
 
   /**
-   * Clear the cache
+   * Clears the cache
    *
-   * @method clear
-   *
-   * @return {void}
-   */
-  clear () {
-    this.indexesCache = {}
-  }
-
-  /**
-   * Remove a given index path from the cache
-   *
-   * @method removeFromCache
-   *
-   * @param  {String}        indexPath
+   * @method clearCache
    *
    * @return {void}
    */
-  removeFromCache (indexPath) {
-    delete this.indexesCache[indexPath]
+  clearCache () {
+    this.indexesCache = new Map()
   }
 
   /**
@@ -62,13 +61,61 @@ class Search {
         throw new Error('Invalid index')
       }
 
-      this.indexesCache[indexPath] = {
+      this.indexesCache.set(indexPath, {
         docs: indexJSON.docs,
         index: lunr.Index.load(indexJSON.index),
         mtime
-      }
+      })
     } catch (error) {
     }
+  }
+
+  /**
+   * Returns the mtime for a given file on the disk
+   *
+   * @method getMTime
+   *
+   * @param  {String} filePath
+   *
+   * @return {Number|String}
+   */
+  async getMTime (filePath) {
+    try {
+      const stats = await fs.stat(filePath)
+      return stats.mtime.toISOString()
+    } catch (error) {
+      return 0
+    }
+  }
+
+  /**
+   * Revalidate the index path by making sure it
+   * exists on the disk, otherwise removed
+   * from the cache too
+   *
+   * @method revalidateIndex
+   *
+   * @param  {String}        filePath
+   *
+   * @return {void}
+   */
+  async revalidateIndex (filePath) {
+    const mtime = await this.getMTime(filePath)
+    if (mtime === 0) {
+      this.indexesCache.delete(filePath)
+    }
+  }
+
+  /**
+   * Revalidate the indexes cache, if the index file is removed
+   * from the disk, then we will drop the cache too
+   *
+   * @method revalidate
+   *
+   * @return {Promise}
+   */
+  revalidate () {
+    return Promise.all(this.paths.map((cachePath) => this.revalidateIndex(cachePath)))
   }
 
   /**
@@ -79,15 +126,14 @@ class Search {
    * @return {void}
    */
   async load (indexPath) {
-    const stats = await fs.stat(indexPath)
-    const cached = this.indexesCache[indexPath]
-    const lastWriteTime = stats.mtime.toISOString()
+    const cached = this.indexesCache.get(indexPath)
+    const lastWriteTime = await this.getMTime(indexPath)
 
     if (!cached || new Date(lastWriteTime) > new Date(cached.mtime)) {
       await this.loadIndex(indexPath, lastWriteTime)
     }
 
-    return this.indexesCache[indexPath]
+    return this.indexesCache.get(indexPath)
   }
 
   /**
@@ -101,6 +147,13 @@ class Search {
    */
   async search (indexPath, term) {
     const { docs, index } = await this.load(indexPath)
+
+    /**
+     * Lazily revalidate the cache to drop invalid indexes
+     * cache.
+     */
+    this.revalidate()
+
     const result = index.search(term)
 
     /**

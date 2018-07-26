@@ -10,6 +10,7 @@ const fs = require('fs-extra')
 const steno = require('steno')
 const _ = require('lodash')
 const ow = require('ow')
+const utils = require('@dimerapp/utils')
 
 /**
  * The database for storing everything on disk
@@ -20,16 +21,10 @@ const ow = require('ow')
  * @param {Object} options
  */
 class Db {
-  constructor (filePath, options = {}) {
+  constructor (filePath) {
     this.filePath = filePath
-    this.onReady = typeof (options.onReady) === 'function' ? options.onReady : function () {}
     this.data = { versions: [] }
-
     this.loaded = false
-
-    if (options.autoload) {
-      this.load()
-    }
   }
 
   /**
@@ -120,7 +115,6 @@ class Db {
     }
 
     this.loaded = true
-    this.onReady()
   }
 
   /**
@@ -178,6 +172,8 @@ class Db {
     this._ensureIsLoaded()
 
     ow(payload, ow.object.label('payload').hasKeys('no'))
+    ow(payload.no, ow.string.label('payload.no').nonEmpty)
+
     const version = this.getVersion(payload.no)
 
     /**
@@ -290,13 +286,37 @@ class Db {
    *
    * @param  {String}   versionNo
    *
-   * @return {Object|undefined}
+   * @return {Object|null}
    */
   getVersion (no) {
     this._ensureIsLoaded()
 
     ow(no, ow.string.label('no').nonEmpty)
-    return _.find(this.data.versions, (version) => version.no === no)
+    return _.find(this.data.versions, (version) => version.no === no) || null
+  }
+
+  /**
+   * Returns the doc with it's json path
+   *
+   * @method getDoc
+   *
+   * @param  {String} versionNo
+   * @param  {String} jsonPath
+   *
+   * @return {Object|Null}
+   */
+  getDoc (versionNo, jsonPath) {
+    this._ensureIsLoaded()
+
+    ow(versionNo, ow.string.label('versionNo').nonEmpty)
+    ow(versionNo, ow.string.label('permalink').nonEmpty)
+
+    const version = this.getVersion(versionNo)
+    if (!version) {
+      return null
+    }
+
+    return version.docs.find((doc) => doc.jsonPath === jsonPath) || null
   }
 
   /**
@@ -307,7 +327,7 @@ class Db {
    * @param  {String} versionNo
    * @param  {String} permalink
    *
-   * @return {Object|undefined}
+   * @return {Object|null}
    */
   getDocByPermalink (versionNo, permalink) {
     this._ensureIsLoaded()
@@ -317,10 +337,33 @@ class Db {
 
     const version = this.getVersion(versionNo)
     if (!version) {
-      return
+      return null
     }
 
-    return _.find(version.docs, (doc) => doc.permalink === permalink)
+    return version.docs.find((doc) => utils.permalink.isSame(doc.permalink, permalink)) || null
+  }
+
+  /**
+   * Returns the doc that has the same permalink for
+   * a given version
+   *
+   * @method duplicateDoc
+   *
+   * @param  {String}    versionNo
+   * @param  {String}    permalink
+   * @param  {String}    jsonPath
+   *
+   * @return {Null|Object}
+   */
+  duplicateDoc (versionNo, permalink, jsonPath) {
+    const version = this.getVersion(versionNo)
+    if (!version) {
+      return null
+    }
+
+    return version.docs.find((doc) => {
+      return utils.permalink.isSame(doc.permalink, permalink) && doc.jsonPath !== jsonPath
+    }) || null
   }
 }
 

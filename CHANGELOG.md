@@ -1,3 +1,13 @@
+<a name="1.0.12"></a>
+## [1.0.12](https://github.com/dimerapp/datastore/compare/v1.0.11...v1.0.12) (2018-07-26)
+
+
+### Features
+
+* **search:** return an array of marks for search results ([9e5482d](https://github.com/dimerapp/datastore/commit/9e5482d))
+
+
+
 <a name="1.0.11"></a>
 ## [1.0.11](https://github.com/dimerapp/datastore/compare/v1.0.10...v1.0.11) (2018-07-26)
 

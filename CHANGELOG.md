@@ -1,3 +1,14 @@
+<a name="1.0.9"></a>
+## [1.0.9](https://github.com/dimerapp/datastore/compare/v1.0.8...v1.0.9) (2018-07-26)
+
+
+### Bug Fixes
+
+* **search:** add a check on size along with mtime ([62f3abc](https://github.com/dimerapp/datastore/commit/62f3abc))
+* **search:** use mtimeMs over mtime for accuracy ([8cc0380](https://github.com/dimerapp/datastore/commit/8cc0380))
+
+
+
 <a name="1.0.8"></a>
 ## [1.0.8](https://github.com/dimerapp/datastore/compare/v1.0.7...v1.0.8) (2018-07-25)
 

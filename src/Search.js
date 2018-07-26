@@ -84,7 +84,6 @@ class Search {
   async getStats (filePath) {
     try {
       const stats = await fs.stat(filePath)
-      console.log(stats)
       return { mtime: stats.mtime.getTime(), size: stats.size }
     } catch (error) {
       return { mtime: 0, size: 0 }

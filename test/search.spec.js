@@ -115,6 +115,7 @@ test.group('Search', (group) => {
 
     await search.search(indexFile, 'different')
     const firstMTime = search.indexesCache.get(indexFile).mtime
+    const firstSize = search.indexesCache.get(indexFile).size
 
     index.docs['/hello#hello-world'].title = 'Updated title'
     await index.save()
@@ -122,7 +123,7 @@ test.group('Search', (group) => {
     await sleep(4000)
     await search.search(indexFile, 'different')
 
-    assert.isTrue(firstMTime < search.indexesCache.get(indexFile).mtime)
+    assert.isTrue((firstMTime < search.indexesCache.get(indexFile).mtime || firstSize !== search.indexesCache.get(indexFile).size))
   }).timeout(8000)
 
   test('invalid cache indexes when index file is missing from the disk', async (assert) => {

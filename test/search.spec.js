@@ -157,4 +157,9 @@ test.group('Search', (group) => {
     await search.revalidate()
     assert.deepEqual(search.indexesCache, new Map())
   })
+
+  test('return empty array when there is no index to search', async (assert) => {
+    const output = await search.search(indexFile, 'different')
+    assert.deepEqual(output, [])
+  })
 })

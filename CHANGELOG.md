@@ -1,3 +1,13 @@
+<a name="1.0.11"></a>
+## [1.0.11](https://github.com/dimerapp/datastore/compare/v1.0.10...v1.0.11) (2018-07-26)
+
+
+### Bug Fixes
+
+* **search:** handle case when search index is missing ([b4a107b](https://github.com/dimerapp/datastore/commit/b4a107b))
+
+
+
 <a name="1.0.10"></a>
 ## [1.0.10](https://github.com/dimerapp/datastore/compare/v1.0.9...v1.0.10) (2018-07-26)
 

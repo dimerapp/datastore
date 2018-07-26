@@ -77,7 +77,9 @@ test.group('Datastore', (group) => {
     })
   })
 
-  test('pull title from json when is not inside meta data', async (assert) => {
+  test('raise error when title is missing', async (assert) => {
+    assert.plan(1)
+
     const store = new Datastore(baseDir)
     await store.db.load()
 
@@ -92,36 +94,15 @@ test.group('Datastore', (group) => {
       ]
     }
 
-    await store.saveDoc('1.0.0', 'foo.md', {
-      permalink: '/hello',
-      category: 'root',
-      content: nodes
-    })
-    await store.persist()
-
-    const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
-    const doc = await fs.readJSON(join(domainDir, '1.0.0', 'foo.json'))
-
-    assert.deepEqual(doc, nodes)
-    assert.deepEqual(metaFile, {
-      versions: [
-        {
-          no: '1.0.0',
-          name: '1.0.0',
-          draft: false,
-          default: false,
-          depreciated: false,
-          docs: [
-            {
-              permalink: '/hello',
-              title: 'Hello world',
-              category: 'root',
-              jsonPath: 'foo.json'
-            }
-          ]
-        }
-      ]
-    })
+    try {
+      await store.saveDoc('1.0.0', 'foo.md', {
+        permalink: '/hello',
+        category: 'root',
+        content: nodes
+      })
+    } catch ({ message }) {
+      assert.equal(message, 'Expected object `doc` to have keys `["title"]`')
+    }
   })
 
   test('set category to root when is not inside meta data', async (assert) => {

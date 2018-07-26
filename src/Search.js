@@ -51,10 +51,11 @@ class Search {
    *
    * @param  {String}  indexPath
    * @param  {String}  mtime
+   * @param  {String}  size
    *
    * @return {void}
    */
-  async loadIndex (indexPath, mtime) {
+  async loadIndex (indexPath, mtime, size) {
     try {
       const indexJSON = await fs.readJSON(indexPath)
       if (!indexJSON.docs || !indexJSON.index) {
@@ -64,7 +65,8 @@ class Search {
       this.indexesCache.set(indexPath, {
         docs: indexJSON.docs,
         index: lunr.Index.load(indexJSON.index),
-        mtime
+        mtime,
+        size
       })
     } catch (error) {
     }
@@ -73,19 +75,19 @@ class Search {
   /**
    * Returns the mtime for a given file on the disk
    *
-   * @method getMTime
+   * @method getStats
    *
    * @param  {String} filePath
    *
    * @return {Number|String}
    */
-  async getMTime (filePath) {
+  async getStats (filePath) {
     try {
       const stats = await fs.stat(filePath)
       console.log(stats)
-      return stats.mtime.getTime()
+      return { mtime: stats.mtime.getTime(), size: stats.size }
     } catch (error) {
-      return 0
+      return { mtime: 0, size: 0 }
     }
   }
 
@@ -101,7 +103,7 @@ class Search {
    * @return {void}
    */
   async revalidateIndex (filePath) {
-    const mtime = await this.getMTime(filePath)
+    const { mtime } = await this.getStats(filePath)
     if (mtime === 0) {
       this.indexesCache.delete(filePath)
     }
@@ -128,10 +130,10 @@ class Search {
    */
   async load (indexPath) {
     const cached = this.indexesCache.get(indexPath)
-    const lastWriteTime = await this.getMTime(indexPath)
+    const { mtime: lastWriteTime, size } = await this.getStats(indexPath)
 
-    if (!cached || lastWriteTime > cached.mtime) {
-      await this.loadIndex(indexPath, lastWriteTime)
+    if (!cached || (lastWriteTime > cached.mtime || size !== cached.size)) {
+      await this.loadIndex(indexPath, lastWriteTime, size)
     }
 
     return this.indexesCache.get(indexPath)

@@ -148,21 +148,24 @@ class Search {
    * @return {void}
    */
   async search (indexPath, term) {
-    const { docs, index } = await this.load(indexPath)
-
+    const index = await this.load(indexPath)
     /**
      * Lazily revalidate the cache to drop invalid indexes
      * cache.
      */
     this.revalidate()
 
-    const result = index.search(term)
+    if (!index || !index.index || !index.docs) {
+      return []
+    }
+
+    const result = index.index.search(term)
 
     /**
      * Attach doc to the results node
      */
     return result.map((node) => {
-      node.doc = docs[node.ref] || {}
+      node.doc = index.docs[node.ref] || {}
       return node
     })
   }

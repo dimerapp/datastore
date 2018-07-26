@@ -231,6 +231,40 @@ And then later search
 const results = await store.search('v4.0', 'What is AdonisJs?')
 ```
 
+Following will be the output of search results
+
+```js
+[
+  {
+    ref: '/yaml-front-matter',
+    marks: {
+      body: [
+        {
+          type: 'raw',
+          text: 'Yaml '
+        },
+        {
+          type: 'mark',
+          text: 'front'
+        },
+        {
+          type: 'raw',
+          text: ' '
+        },
+        {
+          type: 'mark',
+          text: 'matter'
+        },
+        {
+          type: 'raw',
+          text: ' is used for matching content'
+        }
+      ]
+    }
+  }
+]
+```
+
 ## Change log
 
 The change log can be found in the [CHANGELOG.md](https://github.com/dimerapp/md-serve/CHANGELOG.md) file.

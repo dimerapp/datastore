@@ -50,7 +50,97 @@ test.group('Search', (group) => {
 
     const output = await search.search(indexFile, 'different')
     assert.equal(output[0].ref, '/hello#this-is-section-3')
-    assert.deepEqual(output[0].doc, index.docs['/hello#this-is-section-3'])
+
+    assert.deepEqual(output[0].marks.title, [
+      {
+        type: 'raw',
+        text: 'This is section 3'
+      }
+    ])
+
+    assert.deepEqual(output[0].marks.body, [
+      {
+        type: 'raw',
+        text: 'Some '
+      },
+      {
+        type: 'mark',
+        text: 'different'
+      },
+      {
+        type: 'raw',
+        text: ' content'
+      }
+    ])
+  })
+
+  test('create proper marks for matched content', async (assert) => {
+    const content = dedent`
+    # Hello world
+
+    This is the first paragraph
+
+    ## This is section 2
+    Here's the section 2 content
+
+    ### This is section 2.1
+    Here's the section 2.1 content
+
+    ## Yaml front matter
+    Yaml front matter is used for matching content
+    `
+
+    const markdown = new Markdown(content)
+    const vfile = await markdown.toJSON()
+
+    const index = new Index(indexFile)
+    index.addDoc(vfile.contents, '/hello')
+    await index.save()
+
+    const output = await search.search(indexFile, 'front matter')
+    assert.equal(output[0].ref, '/hello#yaml-front-matter')
+
+    assert.deepEqual(output[0].marks.title, [
+      {
+        type: 'raw',
+        text: 'Yaml '
+      },
+      {
+        type: 'mark',
+        text: 'front'
+      },
+      {
+        type: 'raw',
+        text: ' '
+      },
+      {
+        type: 'mark',
+        text: 'matter'
+      }
+    ])
+
+    assert.deepEqual(output[0].marks.body, [
+      {
+        type: 'raw',
+        text: 'Yaml '
+      },
+      {
+        type: 'mark',
+        text: 'front'
+      },
+      {
+        type: 'raw',
+        text: ' '
+      },
+      {
+        type: 'mark',
+        text: 'matter'
+      },
+      {
+        type: 'raw',
+        text: ' is used for matching content'
+      }
+    ])
   })
 
   test('do not reload index when cached', async (assert) => {
@@ -85,8 +175,6 @@ test.group('Search', (group) => {
 
     const output = await search.search(indexFile, 'different')
     assert.equal(output[0].ref, '/hello#this-is-section-3')
-    assert.deepEqual(output[0].doc, index.docs['/hello#this-is-section-3'])
-
     search.loadIndex = _loadIndex
   })
 

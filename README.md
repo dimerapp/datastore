@@ -52,9 +52,9 @@ Each website has one or more versions of documentation.
 |-----|-------|---------|--------------|
 | no **(unique)** | String | YES | The version number. It must be  URL friendly |
 | name | String | No | Version no will be used as the name if not defined.
-| default | Boolean | False | Is this the default version for documentation. If not defined, the greatest number will be considered as the default version. |
-| depreciated | Boolean | False | Is this version depreciated |
-| draft | Boolean | False | Is this version a draft |
+| default | Boolean | No | Is this the default version for documentation. If not defined, the greatest number will be considered as the default version. |
+| depreciated | Boolean | No | Is this version depreciated |
+| draft | Boolean | No | Is this version a draft |
 
 #### Docs
 The documentation node associated with a version always.
@@ -63,7 +63,7 @@ The documentation node associated with a version always.
 |-----|-------|---------|--------------|
 | content | Object | Yes | The `object` of nodes, returned by [@dimerapp/markdown](https://github.com/dimerapp/markdown).
 | permalink **(unique)** | String | Yes | The unique permalink for the doc. This is the URL people will visit to read the doc |
-| title | String | No | The `title` for the document. First `h1` will be used if missing.
+| title | String | Yes | The `title` for the document. First `h1` will be used if missing.
 | jsonPath **(unique)** | String | Yes | The relative path, where the `content` should be saved |
 | summary | String | No | The document social summary. If missing will be fetched from the `content`.
 | redirects | Array[String] | No | An array of permalinks to be redirected to this document. |

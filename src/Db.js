@@ -152,7 +152,6 @@ class Db {
    * @return {void}
    */
   syncMetaData (metaData) {
-    ow(metaData, ow.object.label('metaData').hasKeys('domain'))
     const versions = this.data.versions
     this.data = _.omit(metaData, ['versions'])
     this.data.versions = versions

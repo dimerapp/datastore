@@ -17,12 +17,12 @@ const Index = require('../src/Index')
 
 const sleep = (time) => new Promise((resolve) => setTimeout(resolve, time))
 
-const indexFile = join(__dirname, 'index.json')
+const indexFile = join(__dirname, 'app', 'index.json')
 
 test.group('Search', (group) => {
   group.afterEach(async () => {
     search.clearCache()
-    await fs.remove(indexFile)
+    await fs.remove(join(__dirname, 'app'))
   })
 
   test('load index from disk and search', async (assert) => {

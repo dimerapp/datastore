@@ -79,8 +79,9 @@ class Datastore {
      */
     const existingDoc = this.db.duplicateDoc(versionNo, doc.permalink, jsonPath)
     if (existingDoc) {
-      const error = new Error(`Duplicate permalink ${doc.permalink}`)
-      error.doc = existingDoc
+      const mdName = existingDoc.jsonPath.replace(/\.json$/, '.md')
+      const error = new Error(`${mdName} also using the same permalink: ${doc.permalink}`)
+      error.ruleId = 'duplicate-permalink'
       throw error
     }
 
@@ -116,6 +117,8 @@ class Datastore {
    * @return {void}
    */
   async syncVersions (versions) {
+    ow(versions, ow.array.label('versions'))
+
     /**
      * An array of versions that already exists in the database
      */
@@ -414,6 +417,8 @@ class Datastore {
    * @return {void}
    */
   async indexVersion (versionNo) {
+    ow(versionNo, ow.string.label('versionNo').nonEmpty)
+
     const index = new Index(this.paths.searchIndexFile(versionNo))
 
     /**
@@ -444,6 +449,9 @@ class Datastore {
    * @return {Array}
    */
   async search (versionNo, term) {
+    ow(versionNo, ow.string.label('versionNo').nonEmpty)
+    ow(versionNo, ow.string.label('term').nonEmpty)
+
     return Search.search(this.paths.searchIndexFile(versionNo), term)
   }
 

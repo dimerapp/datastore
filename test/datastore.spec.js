@@ -943,14 +943,9 @@ test.group('Datastore', (group) => {
           children: [{}]
         }
       })
-    } catch ({ message, doc }) {
-      assert.equal(message, 'Duplicate permalink /hello')
-      assert.deepEqual(doc, {
-        category: 'root',
-        permalink: '/hello',
-        jsonPath: 'foo.json',
-        title: 'Hello'
-      })
+    } catch ({ message, ruleId }) {
+      assert.equal(message, 'foo.md also using the same permalink: /hello')
+      assert.equal(ruleId, 'duplicate-permalink')
     }
   })
 

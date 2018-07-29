@@ -156,12 +156,13 @@ Returns an array of saved versions.
 store.getVersions()
 ```
 
-#### getTree(versionNo, limit = 0, withContent = false)
+#### getTree(versionNo, limit = 0, withContent = false, attachVersion = false)
 Get an array of all the docs. Ideally you want this array to create a navigation menu and then on each request, you can ask for the doc content. However...
 
 - You can pass `withContent=true` and the array will have the actual content for the doc too.
 - Setting `limit=0` will return all the docs.
 - All docs will be grouped by categories.
+- When `attachVersion=true`. Each doc will contain it's version node.
 
 ```js
 const tree = await store.getTree('v4.0')
@@ -177,15 +178,19 @@ const tree = await store.getTree('v4.0')
 ]
 ```
 
-#### getDoc(versionNo, filePath)
+#### getDoc(versionNo, filePath, attachVersion = false)
 Returns the doc meta data and it's content.
+
+- When `attachVersion=true`. Doc will contain it's version node.
 
 ```js
 const doc = await store.getDoc('v4.0', 'introduction.md')
 ```
 
-#### getDocByPermalink(versionNo, permalink)
+#### getDocByPermalink(versionNo, permalink, attachVersion = false)
 Returns the doc by it's permalink.
+
+- When `attachVersion=true`. Doc will contain it's version node.
 
 ```js
 const doc = await store.getDocByPermalink('v4.0', '/introduction')

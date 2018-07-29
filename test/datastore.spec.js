@@ -606,7 +606,7 @@ test.group('Datastore', (group) => {
     assert.isNull(docs)
   })
 
-  test('order versions by jsonPath', async (assert) => {
+  test('order docs by jsonPath', async (assert) => {
     const store = new Datastore(baseDir)
     await store.db.load()
 
@@ -694,6 +694,65 @@ test.group('Datastore', (group) => {
     ])
   })
 
+  test('load content for docs with versions node', async (assert) => {
+    const store = new Datastore(baseDir)
+    await store.db.load()
+
+    const nodes = {
+      type: 'root',
+      children: [{}]
+    }
+
+    await store.saveDoc('1.0.0', 'foo.md', {
+      title: 'Hello world',
+      permalink: '/hello',
+      content: nodes
+    })
+
+    await store.saveDoc('1.0.0', 'bar.md', {
+      title: 'Hello world',
+      permalink: '/bar',
+      content: nodes
+    })
+
+    const docs = await store.getTree('1.0.0', 0, true, true)
+    assert.deepEqual(docs, [
+      {
+        category: 'root',
+        docs: [
+          {
+            jsonPath: 'bar.json',
+            title: 'Hello world',
+            permalink: '/bar',
+            category: 'root',
+            content: nodes,
+            version: {
+              no: '1.0.0',
+              name: '1.0.0',
+              default: false,
+              depreciated: false,
+              draft: false
+            }
+          },
+          {
+            jsonPath: 'foo.json',
+            title: 'Hello world',
+            permalink: '/hello',
+            category: 'root',
+            content: nodes,
+            version: {
+              no: '1.0.0',
+              name: '1.0.0',
+              default: false,
+              depreciated: false,
+              draft: false
+            }
+          }
+        ]
+      }
+    ])
+  })
+
   test('limit docs', async (assert) => {
     const store = new Datastore(baseDir)
     await store.db.load()
@@ -757,6 +816,39 @@ test.group('Datastore', (group) => {
     })
   })
 
+  test('attach version node to a single doc', async (assert) => {
+    const store = new Datastore(baseDir)
+    await store.db.load()
+
+    const nodes = {
+      type: 'root',
+      children: [{}]
+    }
+
+    await store.saveDoc('1.0.0', 'foo.md', {
+      title: 'Hello world',
+      permalink: '/hello',
+      content: nodes
+    })
+
+    const doc = await store.getDoc('1.0.0', 'foo.json', true)
+
+    assert.deepEqual(doc, {
+      jsonPath: 'foo.json',
+      title: 'Hello world',
+      permalink: '/hello',
+      category: 'root',
+      content: nodes,
+      version: {
+        no: '1.0.0',
+        name: '1.0.0',
+        draft: false,
+        default: false,
+        depreciated: false
+      }
+    })
+  })
+
   test('return null when single doc is missing', async (assert) => {
     const store = new Datastore(baseDir)
     await store.db.load()
@@ -798,6 +890,38 @@ test.group('Datastore', (group) => {
       permalink: '/hello',
       category: 'root',
       content: nodes
+    })
+  })
+
+  test('attach version node to the doc node', async (assert) => {
+    const store = new Datastore(baseDir)
+    await store.db.load()
+
+    const nodes = {
+      type: 'root',
+      children: [{}]
+    }
+
+    await store.saveDoc('1.0.0', 'foo.md', {
+      title: 'Hello world',
+      permalink: '/hello',
+      content: nodes
+    })
+
+    const doc = await store.getDocByPermalink('1.0.0', '/hello', true)
+    assert.deepEqual(doc, {
+      jsonPath: 'foo.json',
+      title: 'Hello world',
+      permalink: '/hello',
+      category: 'root',
+      content: nodes,
+      version: {
+        no: '1.0.0',
+        default: false,
+        depreciated: false,
+        draft: false,
+        name: '1.0.0'
+      }
     })
   })
 

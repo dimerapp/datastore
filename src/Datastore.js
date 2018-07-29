@@ -210,10 +210,11 @@ class Datastore {
    *
    * @param  {String}    versionNo
    * @param  {Object}    doc
+   * @param  {Boolean}   [attachVersion = false]
    *
    * @return {Object}
    */
-  async loadContent (versionNo, doc) {
+  async loadContent (versionNo, doc, attachVersion = false) {
     /**
      * Validations
      */
@@ -222,7 +223,16 @@ class Datastore {
     ow(doc.jsonPath, ow.string.label('doc.jsonPath').nonEmpty)
 
     const content = await fs.readJSON(join(this.paths.versionPath(versionNo), doc.jsonPath))
-    return Object.assign({ content }, doc)
+    const finalDoc = _.omit(Object.assign({ content }, doc), 'jsonPath')
+
+    /**
+     * Attach the version node to the doc, when request for it
+     */
+    if (attachVersion) {
+      finalDoc.version = _.omit(this.db.getVersion(versionNo), 'docs')
+    }
+
+    return finalDoc
   }
 
   /**
@@ -233,10 +243,11 @@ class Datastore {
    * @param  {String}  versionNo
    * @param  {Boolean} [limit = 0]
    * @param  {Boolean} [withContent = false]
+   * @param  {Boolean} [attachVersion = false]
    *
    * @return {Array|Null}
    */
-  async getTree (versionNo, limit = 0, withContent = false) {
+  async getTree (versionNo, limit = 0, withContent = false, attachVersion = false) {
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
 
     /**
@@ -266,7 +277,7 @@ class Datastore {
      * a node
      */
     if (withContent) {
-      docs = await Promise.all(docs.map((doc) => this.loadContent(versionNo, doc)))
+      docs = await Promise.all(docs.map((doc) => this.loadContent(versionNo, doc, attachVersion)))
     }
 
     return docs.reduce((categories, doc) => {
@@ -281,7 +292,7 @@ class Datastore {
         categories.push(category)
       }
 
-      category.docs.push(doc)
+      category.docs.push(_.omit(doc, 'jsonPath'))
 
       return categories
     }, [])
@@ -292,12 +303,13 @@ class Datastore {
    *
    * @method getDoc
    *
-   * @param  {String} versionNo
-   * @param  {String} filePath
+   * @param  {String}  versionNo
+   * @param  {String}  filePath
+   * @param  {Boolean} attachVersion
    *
    * @return {Object}
    */
-  async getDoc (versionNo, filePath) {
+  async getDoc (versionNo, filePath, attachVersion) {
     const doc = this.db.getDoc(versionNo, this._normalizePath(filePath))
 
     /**
@@ -307,7 +319,7 @@ class Datastore {
       return null
     }
 
-    return this.loadContent(versionNo, doc)
+    return this.loadContent(versionNo, doc, attachVersion)
   }
 
   /**
@@ -315,12 +327,13 @@ class Datastore {
    *
    * @method getDocByPermalink
    *
-   * @param  {String}          versionNo
-   * @param  {String}          permalink
+   * @param  {String}     versionNo
+   * @param  {String}     permalink
+   * @param  {Boolean}    [attachVersion = false]
    *
    * @return {Object}
    */
-  async getDocByPermalink (versionNo, permalink) {
+  async getDocByPermalink (versionNo, permalink, attachVersion = false) {
     const doc = this.db.getDocByPermalink(versionNo, permalink)
 
     /**
@@ -330,7 +343,7 @@ class Datastore {
       return null
     }
 
-    return this.loadContent(versionNo, doc)
+    return this.loadContent(versionNo, doc, attachVersion)
   }
 
   /**

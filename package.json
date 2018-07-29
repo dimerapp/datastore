@@ -1,6 +1,6 @@
 {
   "name": "@dimerapp/datastore",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "description": "Datastore to store dimer websites as JSON",
   "main": "src/Datastore.js",
   "files": [

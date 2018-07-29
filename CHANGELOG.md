@@ -1,3 +1,24 @@
+<a name="1.0.14"></a>
+## [1.0.14](https://github.com/dimerapp/datastore/compare/v1.0.13...v1.0.14) (2018-07-29)
+
+
+### Code Refactoring
+
+* **datastore:** drop jsonPath property from docs object ([a135815](https://github.com/dimerapp/datastore/commit/a135815))
+
+
+### Features
+
+* **loadContent:** now docs can hold it's version node as a property ([717b1fa](https://github.com/dimerapp/datastore/commit/717b1fa))
+
+
+### BREAKING CHANGES
+
+* **datastore:** doc object will not have jsonPath property, ideally this property is not even
+required to render views
+
+
+
 <a name="1.0.13"></a>
 ## [1.0.13](https://github.com/dimerapp/datastore/compare/v1.0.12...v1.0.13) (2018-07-28)
 

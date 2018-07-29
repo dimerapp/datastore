@@ -223,7 +223,7 @@ class Datastore {
     ow(doc.jsonPath, ow.string.label('doc.jsonPath').nonEmpty)
 
     const content = await fs.readJSON(join(this.paths.versionPath(versionNo), doc.jsonPath))
-    const finalDoc = Object.assign({ content }, doc)
+    const finalDoc = _.omit(Object.assign({ content }, doc), 'jsonPath')
 
     /**
      * Attach the version node to the doc, when request for it
@@ -292,7 +292,7 @@ class Datastore {
         categories.push(category)
       }
 
-      category.docs.push(doc)
+      category.docs.push(_.omit(doc, 'jsonPath'))
 
       return categories
     }, [])

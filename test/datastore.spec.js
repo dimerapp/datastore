@@ -66,10 +66,10 @@ test.group('Datastore', (group) => {
           depreciated: false,
           docs: [
             {
+              jsonPath: 'foo.json',
               permalink: '/hello',
               title: 'Hello',
-              category: 'root',
-              jsonPath: 'foo.json'
+              category: 'root'
             }
           ]
         }
@@ -136,10 +136,10 @@ test.group('Datastore', (group) => {
           depreciated: false,
           docs: [
             {
+              jsonPath: 'foo.json',
               permalink: '/hello',
               title: 'Hello world',
-              category: 'root',
-              jsonPath: 'foo.json'
+              category: 'root'
             }
           ]
         }
@@ -240,10 +240,10 @@ test.group('Datastore', (group) => {
           draft: false,
           docs: [
             {
+              jsonPath: 'foo.json',
               permalink: '/hello',
               category: 'root',
-              title: 'Hello world',
-              jsonPath: 'foo.json'
+              title: 'Hello world'
             }
           ]
         },
@@ -311,10 +311,10 @@ test.group('Datastore', (group) => {
           draft: false,
           docs: [
             {
+              jsonPath: 'foo.json',
               permalink: '/hello',
               category: 'root',
-              title: 'Hello world',
-              jsonPath: 'foo.json'
+              title: 'Hello world'
             }
           ]
         }
@@ -432,10 +432,10 @@ test.group('Datastore', (group) => {
           draft: false,
           docs: [
             {
+              jsonPath: 'foo.json',
               permalink: '/hello',
               category: 'root',
-              title: 'Hello world',
-              jsonPath: 'foo.json'
+              title: 'Hello world'
             }
           ]
         }
@@ -577,7 +577,6 @@ test.group('Datastore', (group) => {
         category: 'root',
         docs: [
           {
-            jsonPath: 'foo.json',
             title: 'Hello world',
             permalink: '/hello',
             category: 'root'
@@ -633,13 +632,11 @@ test.group('Datastore', (group) => {
         category: 'root',
         docs: [
           {
-            jsonPath: 'bar.json',
             title: 'Hello world',
             permalink: '/bar',
             category: 'root'
           },
           {
-            jsonPath: 'foo.json',
             title: 'Hello world',
             permalink: '/hello',
             category: 'root'
@@ -676,14 +673,12 @@ test.group('Datastore', (group) => {
         category: 'root',
         docs: [
           {
-            jsonPath: 'bar.json',
             title: 'Hello world',
             permalink: '/bar',
             category: 'root',
             content: nodes
           },
           {
-            jsonPath: 'foo.json',
             title: 'Hello world',
             permalink: '/hello',
             category: 'root',
@@ -721,7 +716,6 @@ test.group('Datastore', (group) => {
         category: 'root',
         docs: [
           {
-            jsonPath: 'bar.json',
             title: 'Hello world',
             permalink: '/bar',
             category: 'root',
@@ -735,7 +729,6 @@ test.group('Datastore', (group) => {
             }
           },
           {
-            jsonPath: 'foo.json',
             title: 'Hello world',
             permalink: '/hello',
             category: 'root',
@@ -780,7 +773,6 @@ test.group('Datastore', (group) => {
         category: 'root',
         docs: [
           {
-            jsonPath: 'bar.json',
             title: 'Hello world',
             permalink: '/bar',
             category: 'root',
@@ -808,7 +800,6 @@ test.group('Datastore', (group) => {
 
     const doc = await store.getDoc('1.0.0', 'foo.json')
     assert.deepEqual(doc, {
-      jsonPath: 'foo.json',
       title: 'Hello world',
       permalink: '/hello',
       category: 'root',
@@ -834,7 +825,6 @@ test.group('Datastore', (group) => {
     const doc = await store.getDoc('1.0.0', 'foo.json', true)
 
     assert.deepEqual(doc, {
-      jsonPath: 'foo.json',
       title: 'Hello world',
       permalink: '/hello',
       category: 'root',
@@ -885,7 +875,6 @@ test.group('Datastore', (group) => {
 
     const doc = await store.getDocByPermalink('1.0.0', '/hello')
     assert.deepEqual(doc, {
-      jsonPath: 'foo.json',
       title: 'Hello world',
       permalink: '/hello',
       category: 'root',
@@ -910,7 +899,6 @@ test.group('Datastore', (group) => {
 
     const doc = await store.getDocByPermalink('1.0.0', '/hello', true)
     assert.deepEqual(doc, {
-      jsonPath: 'foo.json',
       title: 'Hello world',
       permalink: '/hello',
       category: 'root',
@@ -1114,8 +1102,8 @@ test.group('Datastore', (group) => {
           no: '1.0.0',
           docs: [
             {
-              category: 'root',
               jsonPath: 'foo.json',
+              category: 'root',
               permalink: '/hello',
               title: 'Updated Title'
             }
@@ -1217,7 +1205,6 @@ test.group('Datastore', (group) => {
 
     const doc = await store.getDocByPermalink('1.0.0', 'hello')
     assert.deepEqual(doc, {
-      jsonPath: 'foo.json',
       title: 'Hello world',
       permalink: '/hello',
       category: 'root',

@@ -13,16 +13,14 @@ const test = require('japa')
 const Markdown = require('@dimerapp/markdown')
 const dedent = require('dedent')
 const _ = require('lodash')
-const { paths } = require('@dimerapp/utils')
+const Context = require('@dimerapp/context')
 
 const Datastore = require('../src/Datastore')
 
 const baseDir = join(__dirname, 'sites')
 const domainDir = join(baseDir, 'dist', '__api')
 
-const ctx = {
-  paths: paths(baseDir)
-}
+const ctx = new Context(baseDir)
 
 test.group('Datastore', (group) => {
   group.afterEach(async () => {

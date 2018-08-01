@@ -1,3 +1,13 @@
+<a name="1.0.16"></a>
+## [1.0.16](https://github.com/dimerapp/datastore/compare/v1.0.15...v1.0.16) (2018-08-01)
+
+
+### Bug Fixes
+
+* **datastore:** use ctx.get to access properties ([37fbcb8](https://github.com/dimerapp/datastore/commit/37fbcb8))
+
+
+
 <a name="1.0.15"></a>
 ## [1.0.15](https://github.com/dimerapp/datastore/compare/v1.0.14...v1.0.15) (2018-08-01)
 

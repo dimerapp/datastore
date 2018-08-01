@@ -417,7 +417,7 @@ class Datastore {
    * @return {Object}
    */
   getConfig () {
-    return _.omit(this.db.data, ['versions'])
+    return _.omit(this.db.data, ['versions', 'compilerOptions'])
   }
 
   /**

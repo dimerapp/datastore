@@ -73,9 +73,10 @@ After installation you can grab the datastore as follows and save documents.
 
 ```js
 const Datastore = require('@dimerapp/datastore')
+const Context = require('@dimerapp/context')
 
-const domain = 'adonisjs.dimerapp.com'
-const store = new Datastore(domain)
+const ctx = new Context(__dirname)
+const store = new Datastore(ctx)
 
 await store.load()
 ```

@@ -1,3 +1,23 @@
+<a name="1.0.15"></a>
+## [1.0.15](https://github.com/dimerapp/datastore/compare/v1.0.14...v1.0.15) (2018-08-01)
+
+
+### Code Refactoring
+
+* **datastore:** use ctx ([c755451](https://github.com/dimerapp/datastore/commit/c755451))
+
+
+### Features
+
+* **datastore:** omit compilerOptions when calling getConfig ([e9b2fb2](https://github.com/dimerapp/datastore/commit/e9b2fb2))
+
+
+### BREAKING CHANGES
+
+* **datastore:** first argument to is now an instance of ctx over baseDir
+
+
+
 <a name="1.0.14"></a>
 ## [1.0.14](https://github.com/dimerapp/datastore/compare/v1.0.13...v1.0.14) (2018-07-29)
 

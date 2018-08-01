@@ -12,6 +12,7 @@ const { join, extname } = require('path')
 const _ = require('lodash')
 const ow = require('ow')
 const utils = require('@dimerapp/utils')
+const slash = require('slash')
 
 const Db = require('./Db')
 const Index = require('./Index')
@@ -25,11 +26,9 @@ const Search = require('./Search')
  * @param {String} storageDir
  */
 class Datastore {
-  constructor (baseDir) {
-    ow(baseDir, ow.string.label('baseDir').nonEmpty)
-    this.paths = utils.paths(baseDir)
-
-    this.db = new Db(this.paths.metaFile())
+  constructor (ctx) {
+    this.ctx = ctx
+    this.db = new Db(this.ctx.paths.metaFile())
   }
 
   /**
@@ -44,7 +43,7 @@ class Datastore {
    * @private
    */
   _normalizePath (filePath) {
-    return filePath.replace(new RegExp(`${extname(filePath)}$`), '.json')
+    return slash(filePath).replace(new RegExp(`${extname(filePath)}$`), '.json')
   }
 
   /**
@@ -99,7 +98,7 @@ class Datastore {
     /**
      * Save actual file
      */
-    await fs.outputJSON(join(this.paths.versionPath(versionNo), jsonPath), doc.content)
+    await fs.outputJSON(join(this.ctx.paths.versionPath(versionNo), jsonPath), doc.content)
 
     /**
      * Add to db
@@ -150,7 +149,7 @@ class Datastore {
      * the version files and search indexes.
      */
     await Promise.all([removed.map((version) => {
-      return fs.remove(this.paths.versionPath(version.no))
+      return fs.remove(this.ctx.paths.versionPath(version.no))
     })])
 
     return { added, removed }
@@ -178,7 +177,7 @@ class Datastore {
     /**
      * Drop the actual content file from disk
      */
-    await fs.remove(join(this.paths.versionPath(versionNo), jsonPath))
+    await fs.remove(join(this.ctx.paths.versionPath(versionNo), jsonPath))
 
     /**
      * Update db
@@ -222,7 +221,7 @@ class Datastore {
     ow(doc, ow.object.label('doc').hasKeys('jsonPath'))
     ow(doc.jsonPath, ow.string.label('doc.jsonPath').nonEmpty)
 
-    const content = await fs.readJSON(join(this.paths.versionPath(versionNo), doc.jsonPath))
+    const content = await fs.readJSON(join(this.ctx.paths.versionPath(versionNo), doc.jsonPath))
     const finalDoc = _.omit(Object.assign({ content }, doc), 'jsonPath')
 
     /**
@@ -417,7 +416,7 @@ class Datastore {
    * @return {Object}
    */
   getConfig () {
-    return _.omit(this.db.data, ['versions'])
+    return _.omit(this.db.data, ['versions', 'compilerOptions'])
   }
 
   /**
@@ -432,7 +431,7 @@ class Datastore {
   async indexVersion (versionNo) {
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
 
-    const index = new Index(this.paths.searchIndexFile(versionNo))
+    const index = new Index(this.ctx.paths.searchIndexFile(versionNo))
 
     /**
      * Get the entire tree with the loaded content
@@ -465,7 +464,7 @@ class Datastore {
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
     ow(versionNo, ow.string.label('term').nonEmpty)
 
-    return Search.search(this.paths.searchIndexFile(versionNo), term)
+    return Search.search(this.ctx.paths.searchIndexFile(versionNo), term)
   }
 
   /**
@@ -480,7 +479,7 @@ class Datastore {
    */
   async load (clean = false) {
     if (clean) {
-      await fs.remove(this.paths.apiPath())
+      await fs.remove(this.ctx.paths.apiPath())
     }
 
     await this.db.load()

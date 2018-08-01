@@ -12,6 +12,7 @@ const { join, extname } = require('path')
 const _ = require('lodash')
 const ow = require('ow')
 const utils = require('@dimerapp/utils')
+const slash = require('slash')
 
 const Db = require('./Db')
 const Index = require('./Index')
@@ -42,7 +43,7 @@ class Datastore {
    * @private
    */
   _normalizePath (filePath) {
-    return filePath.replace(new RegExp(`${extname(filePath)}$`), '.json')
+    return slash(filePath).replace(new RegExp(`${extname(filePath)}$`), '.json')
   }
 
   /**

@@ -8,7 +8,7 @@
 */
 
 const fs = require('fs-extra')
-const { join } = require('path')
+const { join, win32 } = require('path')
 const test = require('japa')
 const Markdown = require('@dimerapp/markdown')
 const dedent = require('dedent')
@@ -1252,6 +1252,47 @@ test.group('Datastore', (group) => {
     await store.db.load()
 
     await store.saveDoc('1.0.0', 'foo/bar.md', {
+      title: 'Hello',
+      permalink: '/hello',
+      category: 'root',
+      content: {
+        type: 'root',
+        children: [{}]
+      }
+    })
+
+    await store.persist()
+
+    const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
+    const doc = await fs.readJSON(join(domainDir, '1.0.0', 'foo/bar.json'))
+
+    assert.deepEqual(doc, { type: 'root', children: [{}] })
+    assert.deepEqual(metaFile, {
+      versions: [
+        {
+          no: '1.0.0',
+          name: '1.0.0',
+          draft: false,
+          default: false,
+          depreciated: false,
+          docs: [
+            {
+              jsonPath: 'foo/bar.json',
+              permalink: '/hello',
+              title: 'Hello',
+              category: 'root'
+            }
+          ]
+        }
+      ]
+    })
+  })
+
+  test('save doc with nested baseName pull from windows path', async (assert) => {
+    const store = new Datastore(ctx)
+    await store.db.load()
+
+    await store.saveDoc('1.0.0', win32.join('foo', 'bar.md'), {
       title: 'Hello',
       permalink: '/hello',
       category: 'root',

@@ -29,6 +29,7 @@
   },
   "devDependencies": {
     "@adonisjs/mrm-preset": "^1.0.10",
+    "@dimerapp/context": "^1.0.1",
     "@dimerapp/markdown": "^3.0.0",
     "commitizen": "^2.10.1",
     "cz-conventional-changelog": "^2.1.0",

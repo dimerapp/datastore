@@ -1,3 +1,13 @@
+<a name="1.0.18"></a>
+## [1.0.18](https://github.com/dimerapp/datastore/compare/v1.0.17...v1.0.18) (2018-08-03)
+
+
+### Features
+
+* **search:** accept limit to limit search results ([4331547](https://github.com/dimerapp/datastore/commit/4331547))
+
+
+
 <a name="1.0.17"></a>
 ## [1.0.17](https://github.com/dimerapp/datastore/compare/v1.0.16...v1.0.17) (2018-08-03)
 

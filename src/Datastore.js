@@ -137,7 +137,9 @@ class Datastore {
      * Pulling from the latest database copy to get the normalized
      * copy of versions
      */
-    const added = _.differenceBy(this.db.getVersions(), existingVersions, (version) => version.no)
+    const added = _.differenceWith(this.db.getVersions(), existingVersions, (source, other) => {
+      return source.no === other.no && source.location === other.location
+    })
 
     /**
      * Remove non-existing versions

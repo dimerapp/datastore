@@ -214,7 +214,7 @@ test.group('Search', (group) => {
     assert.isTrue((firstMTime < search.indexesCache.get(indexFile).mtime || firstSize !== search.indexesCache.get(indexFile).size))
   }).timeout(8000)
 
-  test('invalid cache indexes when index file is missing from the disk', async (assert) => {
+  test('invalidate cache indexes when index file is missing from the disk', async (assert) => {
     const content = dedent`
     # Hello world
 
@@ -249,5 +249,32 @@ test.group('Search', (group) => {
   test('return empty array when there is no index to search', async (assert) => {
     const output = await search.search(indexFile, 'different')
     assert.deepEqual(output, [])
+  })
+
+  test('limit search results', async (assert) => {
+    const content = dedent`
+    # Hello world
+
+    This is the first paragraph
+
+    ## This is section 2
+    Here's the section 2 content
+
+    ### This is section 2.1
+    Here's the section 2.1 content
+
+    ## This is section 3
+    Some different content
+    `
+
+    const markdown = new Markdown(content)
+    const vfile = await markdown.toJSON()
+
+    const index = new Index(indexFile)
+    index.addDoc(vfile.contents, '/hello')
+    await index.save()
+
+    const output = await search.search(indexFile, 'section', 1)
+    assert.lengthOf(output, 1)
   })
 })

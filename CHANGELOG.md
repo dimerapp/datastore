@@ -1,3 +1,13 @@
+<a name="1.0.19"></a>
+## [1.0.19](https://github.com/dimerapp/datastore/compare/v1.0.18...v1.0.19) (2018-08-03)
+
+
+### Bug Fixes
+
+* **datastore:** pass limit to search class ([a01049f](https://github.com/dimerapp/datastore/commit/a01049f))
+
+
+
 <a name="1.0.18"></a>
 ## [1.0.18](https://github.com/dimerapp/datastore/compare/v1.0.17...v1.0.18) (2018-08-03)
 

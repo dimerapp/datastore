@@ -459,14 +459,15 @@ class Datastore {
    *
    * @param  {String} versionNo
    * @param  {String} term
+   * @param  {String} limit
    *
    * @return {Array}
    */
-  async search (versionNo, term) {
+  async search (versionNo, term, limit) {
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
     ow(versionNo, ow.string.label('term').nonEmpty)
 
-    return Search.search(this.paths.searchIndexFile(versionNo), term)
+    return Search.search(this.paths.searchIndexFile(versionNo), term, limit)
   }
 
   /**

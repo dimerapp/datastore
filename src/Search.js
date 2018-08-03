@@ -252,7 +252,7 @@ class Search {
    *
    * @return {void}
    */
-  async search (indexPath, term) {
+  async search (indexPath, term, limit = 0) {
     const index = await this.load(indexPath)
     /**
      * Lazily revalidate the cache to drop invalid indexes
@@ -264,7 +264,10 @@ class Search {
       return []
     }
 
-    const result = index.index.search(term)
+    let result = index.index.search(term)
+    if (limit) {
+      result = _.take(result, limit)
+    }
 
     /**
      * Attach doc to the results node

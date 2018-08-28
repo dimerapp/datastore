@@ -100,7 +100,7 @@ class Datastore {
     /**
      * Save actual file
      */
-    await fs.outputJSON(join(this.paths.versionPath(versionNo), jsonPath), doc.content)
+    await fs.outputJSON(this.paths.docPath(zoneSlug, versionNo, jsonPath), doc.content)
 
     /**
      * Add to db
@@ -155,7 +155,7 @@ class Datastore {
      * the version files and search indexes.
      */
     await Promise.all([removed.map((version) => {
-      return fs.remove(this.paths.versionPath(version.no))
+      return fs.remove(this.paths.versionPath(zoneSlug, version.no))
     })])
 
     return { added, removed }
@@ -185,7 +185,7 @@ class Datastore {
     /**
      * Drop the actual content file from disk
      */
-    await fs.remove(join(this.paths.versionPath(versionNo), jsonPath))
+    await fs.remove(join(this.paths.versionPath(zoneSlug, versionNo), jsonPath))
 
     /**
      * Update db
@@ -233,7 +233,7 @@ class Datastore {
     ow(doc, ow.object.label('doc').hasKeys('jsonPath'))
     ow(doc.jsonPath, ow.string.label('doc.jsonPath').nonEmpty)
 
-    const content = await fs.readJSON(join(this.paths.versionPath(versionNo), doc.jsonPath))
+    const content = await fs.readJSON(this.paths.docPath(zoneSlug, versionNo, doc.jsonPath))
     const finalDoc = _.omit(Object.assign({ content }, doc), 'jsonPath')
 
     /**
@@ -459,7 +459,7 @@ class Datastore {
     ow(zoneSlug, ow.string.label('zoneSlug').nonEmpty)
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
 
-    const index = new Index(this.paths.searchIndexFile(versionNo))
+    const index = new Index(this.paths.searchIndexFile(zoneSlug, versionNo))
 
     /**
      * Get the entire tree with the loaded content
@@ -495,7 +495,7 @@ class Datastore {
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
     ow(versionNo, ow.string.label('term').nonEmpty)
 
-    return Search.search(this.paths.searchIndexFile(versionNo), term, limit)
+    return Search.search(this.paths.searchIndexFile(zoneSlug, versionNo), term, limit)
   }
 
   /**

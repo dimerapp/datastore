@@ -56,7 +56,7 @@ test.group('Datastore', (group) => {
     await store.persist()
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
-    const doc = await fs.readJSON(join(domainDir, '1.0.0', 'foo.json'))
+    const doc = await fs.readJSON(join(domainDir, 'guides', '1.0.0', 'foo.json'))
 
     assert.deepEqual(doc, { type: 'root', children: [{}] })
     assert.deepEqual(metaFile, {
@@ -130,7 +130,7 @@ test.group('Datastore', (group) => {
     await store.persist()
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
-    const doc = await fs.readJSON(join(domainDir, '1.0.0', 'foo.json'))
+    const doc = await fs.readJSON(join(domainDir, 'guides', '1.0.0', 'foo.json'))
 
     assert.deepEqual(doc, nodes)
     assert.deepEqual(metaFile, {
@@ -429,8 +429,8 @@ test.group('Datastore', (group) => {
       content: nodes
     })
 
-    let v1 = await fs.pathExists(join(domainDir, '1.0.0', 'foo.json'))
-    let v2 = await fs.pathExists(join(domainDir, '1.0.1', 'foo.json'))
+    let v1 = await fs.pathExists(join(domainDir, 'guides', '1.0.0', 'foo.json'))
+    let v2 = await fs.pathExists(join(domainDir, 'guides', '1.0.1', 'foo.json'))
     assert.isTrue(v1)
     assert.isTrue(v2)
 
@@ -443,8 +443,8 @@ test.group('Datastore', (group) => {
 
     await store.persist()
 
-    v1 = await fs.pathExists(join(domainDir, '1.0.0', 'foo.json'))
-    v2 = await fs.pathExists(join(domainDir, '1.0.1', 'foo.json'))
+    v1 = await fs.pathExists(join(domainDir, 'guides', '1.0.0', 'foo.json'))
+    v2 = await fs.pathExists(join(domainDir, 'guides', '1.0.1', 'foo.json'))
     assert.isTrue(v1)
     assert.isFalse(v2)
 
@@ -493,7 +493,7 @@ test.group('Datastore', (group) => {
     await store.persist()
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
-    const foo = await fs.pathExists(join(domainDir, '1.0.0', 'foo.json'))
+    const foo = await fs.pathExists(join(domainDir, 'guides', '1.0.0', 'foo.json'))
     assert.isFalse(foo)
 
     assert.deepEqual(metaFile, {
@@ -533,7 +533,7 @@ test.group('Datastore', (group) => {
     await store.persist()
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
-    const foo = await fs.pathExists(join(domainDir, '1.0.0', 'foo.json'))
+    const foo = await fs.pathExists(join(domainDir, 'guides', '1.0.0', 'foo.json'))
     assert.isTrue(foo)
 
     assert.deepEqual(metaFile, {
@@ -1015,7 +1015,7 @@ test.group('Datastore', (group) => {
     })
 
     await store.indexVersion('guides', '1.0.0')
-    const indexFile = await fs.readJSON(join(domainDir, '1.0.0', 'search.json'))
+    const indexFile = await fs.readJSON(join(domainDir, 'guides', '1.0.0', 'search.json'))
 
     assert.deepEqual(indexFile.docs, {
       '/hello#this-is-a-section': {
@@ -1026,7 +1026,7 @@ test.group('Datastore', (group) => {
     })
 
     await store.indexVersion('guides', '1.0.1')
-    const indexFile1 = await fs.readJSON(join(domainDir, '1.0.1', 'search.json'))
+    const indexFile1 = await fs.readJSON(join(domainDir, 'guides', '1.0.1', 'search.json'))
 
     assert.deepEqual(indexFile1.docs, {
       '/hello#this-is-a-section': {
@@ -1146,7 +1146,7 @@ test.group('Datastore', (group) => {
     await store.persist()
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
-    const doc = await fs.readJSON(join(domainDir, '1.0.0', 'foo.json'))
+    const doc = await fs.readJSON(join(domainDir, 'api', '1.0.0', 'foo.json'))
 
     assert.deepEqual(doc, nodes)
     assert.deepEqual(metaFile, {
@@ -1202,7 +1202,7 @@ test.group('Datastore', (group) => {
     await store.persist()
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
-    const doc = await fs.readJSON(join(domainDir, '1.0.0', 'foo.json'))
+    const doc = await fs.readJSON(join(domainDir, 'api', '1.0.0', 'foo.json'))
 
     assert.deepEqual(doc, nodes)
     assert.deepEqual(metaFile, {
@@ -1361,14 +1361,14 @@ test.group('Datastore', (group) => {
 
     await store.persist()
     let metaFile = await fs.exists(join(domainDir, 'meta.json'))
-    let saveFile = await fs.exists(join(domainDir, '1.0.0', 'foo.json'))
+    let saveFile = await fs.exists(join(domainDir, 'guides', '1.0.0', 'foo.json'))
 
     assert.isTrue(metaFile)
     assert.isTrue(saveFile)
 
     await store.load(true)
 
-    saveFile = await fs.exists(join(domainDir, '1.0.0', 'foo.json'))
+    saveFile = await fs.exists(join(domainDir, 'guides', '1.0.0', 'foo.json'))
     assert.isFalse(saveFile)
 
     assert.deepEqual(store.db.data, { zones: [] })
@@ -1391,7 +1391,7 @@ test.group('Datastore', (group) => {
     await store.persist()
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
-    const doc = await fs.readJSON(join(domainDir, '1.0.0', 'foo/bar.json'))
+    const doc = await fs.readJSON(join(domainDir, 'api', '1.0.0', 'foo/bar.json'))
 
     assert.deepEqual(doc, { type: 'root', children: [{}] })
     assert.deepEqual(metaFile, {
@@ -1436,7 +1436,7 @@ test.group('Datastore', (group) => {
     await store.persist()
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
-    const doc = await fs.readJSON(join(domainDir, '1.0.0', 'foo/bar.json'))
+    const doc = await fs.readJSON(join(domainDir, 'api', '1.0.0', 'foo/bar.json'))
 
     assert.deepEqual(doc, { type: 'root', children: [{}] })
     assert.deepEqual(metaFile, {

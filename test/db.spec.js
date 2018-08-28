@@ -982,7 +982,7 @@ test.group('Db', (group) => {
       title: 'Foo'
     })
 
-    assert.deepEqual(db.duplicateDoc('guides', '1.0.0', 'foo', 'bar.json'), {
+    assert.deepEqual(db.findDuplicateDoc('guides', '1.0.0', 'foo', 'bar.json'), {
       jsonPath: 'foo.json',
       category: 'root',
       permalink: 'foo',
@@ -990,7 +990,7 @@ test.group('Db', (group) => {
     })
   })
 
-  test('return null from duplicateDoc when jsonPath is same', async (assert) => {
+  test('return null from findDuplicateDoc when jsonPath is same', async (assert) => {
     const db = new Db(dbFile, { autoload: false })
     await db.load()
 
@@ -1001,10 +1001,10 @@ test.group('Db', (group) => {
       title: 'Foo'
     })
 
-    assert.isNull(db.duplicateDoc('guides', '1.0.0', 'foo', 'foo.json'))
+    assert.isNull(db.findDuplicateDoc('guides', '1.0.0', 'foo', 'foo.json'))
   })
 
-  test('return null from duplicateDoc when permalink is different', async (assert) => {
+  test('return null from findDuplicateDoc when permalink is different', async (assert) => {
     const db = new Db(dbFile, { autoload: false })
     await db.load()
 
@@ -1015,10 +1015,10 @@ test.group('Db', (group) => {
       title: 'Foo'
     })
 
-    assert.isNull(db.duplicateDoc('guides', '1.0.0', 'bar', 'bar.json'))
+    assert.isNull(db.findDuplicateDoc('guides', '1.0.0', 'bar', 'bar.json'))
   })
 
-  test('return null from duplicateDoc when version is different', async (assert) => {
+  test('return null from findDuplicateDoc when version is different', async (assert) => {
     const db = new Db(dbFile, { autoload: false })
     await db.load()
 
@@ -1029,10 +1029,10 @@ test.group('Db', (group) => {
       title: 'Foo'
     })
 
-    assert.isNull(db.duplicateDoc('guides', '1.0.1', 'foo', 'bar.json'))
+    assert.isNull(db.findDuplicateDoc('guides', '1.0.1', 'foo', 'bar.json'))
   })
 
-  test('return null from duplicateDoc when zone is different', async (assert) => {
+  test('return null from findDuplicateDoc when zone is different', async (assert) => {
     const db = new Db(dbFile, { autoload: false })
     await db.load()
 
@@ -1043,10 +1043,10 @@ test.group('Db', (group) => {
       title: 'Foo'
     })
 
-    assert.isNull(db.duplicateDoc('faq', '1.0.0', 'foo', 'bar.json'))
+    assert.isNull(db.findDuplicateDoc('faq', '1.0.0', 'foo', 'bar.json'))
   })
 
-  test('return null from duplicateDoc when zone is different', async (assert) => {
+  test('return null from findDuplicateDoc when zone is different', async (assert) => {
     const db = new Db(dbFile, { autoload: false })
     await db.load()
 
@@ -1057,7 +1057,7 @@ test.group('Db', (group) => {
       title: 'Foo'
     })
 
-    assert.isNull(db.duplicateDoc('faq', '1.0.0', 'foo', 'bar.json'))
+    assert.isNull(db.findDuplicateDoc('faq', '1.0.0', 'foo', 'bar.json'))
   })
 
   test('remove zone and it\'s versions', async (assert) => {

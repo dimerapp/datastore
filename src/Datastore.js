@@ -62,7 +62,7 @@ class Datastore {
     /**
      * Make sure the permalink is not duplicate
      */
-    const existingDoc = this.db.duplicateDoc(zoneSlug, versionNo, doc.permalink, jsonPath)
+    const existingDoc = this.db.findDuplicateDoc(zoneSlug, versionNo, doc.permalink, jsonPath)
     if (existingDoc) {
       const mdName = existingDoc.jsonPath.replace(/\.json$/, '.md')
       const error = new Error(`${mdName} also using the same permalink: ${doc.permalink}`)

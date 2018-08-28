@@ -530,7 +530,7 @@ class Db {
    * Returns the doc that has the same permalink for
    * a given version
    *
-   * @method duplicateDoc
+   * @method findDuplicateDoc
    *
    * @param  {String}    zoneSlug
    * @param  {String}    versionNo
@@ -539,7 +539,7 @@ class Db {
    *
    * @return {Null|Object}
    */
-  duplicateDoc (zoneSlug, versionNo, permalink, jsonPath) {
+  findDuplicateDoc (zoneSlug, versionNo, permalink, jsonPath) {
     const version = this.getVersion(zoneSlug, versionNo)
     if (!version) {
       return null

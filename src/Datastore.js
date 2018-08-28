@@ -8,11 +8,10 @@
 */
 
 const fs = require('fs-extra')
-const { join, extname } = require('path')
+const { join } = require('path')
 const _ = require('lodash')
 const ow = require('ow')
 const utils = require('@dimerapp/utils')
-const slash = require('slash')
 
 const Db = require('./Db')
 const Index = require('./Index')
@@ -29,21 +28,6 @@ class Datastore {
   constructor (ctx) {
     this.paths = ctx.get('paths')
     this.db = new Db(this.paths.metaFile())
-  }
-
-  /**
-   * Normalizes the path of the doc content file
-   *
-   * @method _normalizePath
-   *
-   * @param  {String}       filePath
-   *
-   * @return {String}
-   *
-   * @private
-   */
-  _normalizePath (filePath) {
-    return slash(filePath).replace(new RegExp(`${extname(filePath)}$`), '.json')
   }
 
   /**
@@ -73,7 +57,7 @@ class Datastore {
     /**
      * Normalize the file path and convert it to .json file
      */
-    const jsonPath = this._normalizePath(filePath)
+    const jsonPath = this.paths.makeJsonPath(filePath)
 
     /**
      * Make sure the permalink is not duplicate
@@ -180,7 +164,7 @@ class Datastore {
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
     ow(filePath, ow.string.label('filePath').nonEmpty)
 
-    const jsonPath = this._normalizePath(filePath)
+    const jsonPath = this.paths.makeJsonPath(filePath)
 
     /**
      * Drop the actual content file from disk
@@ -328,7 +312,7 @@ class Datastore {
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
     ow(filePath, ow.string.label('filePath').nonEmpty)
 
-    const doc = this.db.getDoc(zoneSlug, versionNo, this._normalizePath(filePath))
+    const doc = this.db.getDoc(zoneSlug, versionNo, this.paths.makeJsonPath(filePath))
 
     /**
      * Return null if doc is missing

@@ -23,8 +23,21 @@ const utils = require('@dimerapp/utils')
 class Db {
   constructor (filePath) {
     this.filePath = filePath
-    this.data = { versions: [] }
+    this.data = this._initialPayload()
     this.loaded = false
+  }
+
+  /**
+   * Returns the initial payload, when nothing is in the store
+   *
+   * @method _initialPayload
+   *
+   * @return {Object}
+   *
+   * @private
+   */
+  _initialPayload () {
+    return { zones: [] }
   }
 
   /**
@@ -49,6 +62,27 @@ class Db {
   }
 
   /**
+   * Normalize the zone node
+   *
+   * @method _normalizeZone
+   *
+   * @param  {Object}       zone
+   *
+   * @return {Object}
+   *
+   * @private
+   */
+  _normalizeZone (zone) {
+    const normalizedZone = Object.assign({
+      name: zone.slug,
+      versions: []
+    }, zone)
+
+    normalizedZone.versions = normalizedZone.versions.map((version) => this._normalizeVersion(version))
+    return normalizedZone
+  }
+
+  /**
    * Throws an error if db is not ready
    *
    * @method _ensureIsLoaded
@@ -64,6 +98,69 @@ class Db {
   }
 
   /**
+   * Returns a boolean telling if the array has valid shape
+   * for docs.
+   *
+   * @method _areDocsValid
+   *
+   * @param  {Array}      docs
+   *
+   * @return {Boolean}
+   *
+   * @private
+   */
+  _areDocsValid (docs) {
+    return _.every(docs, (doc) => {
+      return doc.permalink && doc.jsonPath && doc.category && doc.title
+    })
+  }
+
+  /**
+   * Returns a boolean telling, if array has valid shape for verions.
+   * Also each version will check it's child docs shape too
+   *
+   * @method _areVersionsValid
+   *
+   * @param  {Array}          versions
+   *
+   * @return {Boolean}
+   *
+   * @private
+   */
+  _areVersionsValid (versions) {
+    return _.every(versions, (version) => {
+      if (!version.no || !version.name || !version.docs) {
+        return false
+      }
+
+      return this._areDocsValid(version.docs)
+    })
+  }
+
+  /**
+   * Returns a boolean, telling if the array is valid for the shape
+   * of zone. Each zone will check it's versions and versions will
+   * check their docs
+   *
+   * @method _areZonesValid
+   *
+   * @param  {Array}       zones
+   *
+   * @return {Boolean}
+   *
+   * @private
+   */
+  _areZonesValid (zones) {
+    return _.every(zones, (zone) => {
+      if (!zone.slug || !zone.name || !zone.versions) {
+        return false
+      }
+
+      return this._areVersionsValid(zone.versions)
+    })
+  }
+
+  /**
    * Returns a boolean telling if file is valid for writes and
    * reads
    *
@@ -74,27 +171,11 @@ class Db {
   isFileValid () {
     this._ensureIsLoaded()
 
-    if (!this.data.versions) {
+    if (!this.data.zones) {
       return false
     }
 
-    if (!this.data.versions.length) {
-      return true
-    }
-
-    return !_.some(this.data.versions, (version) => {
-      if (!version.no || !version.name || !version.docs) {
-        return true
-      }
-
-      if (!version.docs.length) {
-        return false
-      }
-
-      return _.some(version.docs, (doc) => {
-        return !doc.permalink || !doc.jsonPath || !doc.category || !doc.title
-      })
-    })
+    return this._areZonesValid(this.data.zones)
   }
 
   /**
@@ -107,11 +188,9 @@ class Db {
   async load () {
     try {
       this.data = await fs.readJSON(this.filePath)
-      this.data.versions = (this.data.versions || []).map((version) => this._normalizeVersion(version))
+      this.data.zones = (this.data.zones || []).map((zone) => this._normalizeZone(zone))
     } catch (error) {
-      this.data = {
-        versions: []
-      }
+      this.data = this._initialPayload()
     }
 
     this.loaded = true
@@ -152,9 +231,58 @@ class Db {
    * @return {void}
    */
   syncMetaData (metaData) {
-    const versions = this.data.versions
-    this.data = _.omit(metaData, ['versions'])
-    this.data.versions = versions
+    this._ensureIsLoaded()
+
+    const zones = this.data.zones
+    this.data = _.omit(metaData, ['zones'])
+    this.data.zones = zones
+  }
+
+  /**
+   * Get the zone for a given slug
+   *
+   * @method getZone
+   *
+   * @param  {String} slug
+   *
+   * @return {Object|Null}
+   */
+  getZone (slug) {
+    this._ensureIsLoaded()
+
+    ow(slug, ow.string.label('slug').nonEmpty)
+    return _.find(this.data.zones, (zone) => zone.slug === slug) || null
+  }
+
+  /**
+   * Saves/updates the zone. The uniqueness if maintained
+   * using hte `slug` key.
+   *
+   * @method saveZone
+   *
+   * @param  {Object} payload
+   *
+   * @return {Object}
+   */
+  saveZone (payload) {
+    this._ensureIsLoaded()
+
+    ow(payload, ow.object.label('payload').hasKeys('slug'))
+    ow(payload.slug, ow.string.label('payload.slug').nonEmpty)
+
+    const zone = this.getZone(payload.slug)
+
+    /**
+     * Create zone, when one doesn't exists
+     */
+    if (!zone) {
+      payload = this._normalizeZone(payload)
+      this.data.zones.push(payload)
+      return payload
+    }
+
+    Object.assign(zone, payload)
+    return zone
   }
 
   /**
@@ -163,24 +291,27 @@ class Db {
    *
    * @method saveVersion
    *
+   * @param  {String}    zoneSlug
    * @param  {Object}    payload
    *
    * @return {Object}
    */
-  saveVersion (payload) {
+  saveVersion (zoneSlug, payload) {
     this._ensureIsLoaded()
 
+    ow(zoneSlug, ow.string.label('zoneSlug').nonEmpty)
     ow(payload, ow.object.label('payload').hasKeys('no'))
     ow(payload.no, ow.string.label('payload.no').nonEmpty)
 
-    const version = this.getVersion(payload.no)
+    const zone = this.saveZone({ slug: zoneSlug })
+    const version = this.getVersion(zone.slug, payload.no)
 
     /**
      * Add a new version, when doesn't exists
      */
     if (!version) {
       payload = this._normalizeVersion(payload)
-      this.data.versions.push(payload)
+      zone.versions.push(payload)
       return payload
     }
 
@@ -195,23 +326,28 @@ class Db {
    * @method addDoc
    *
    * @param  {String}  versionNo
+   * @param  {String}  zoneSlug
    * @param  {String}  payload
    */
-  addDoc (versionNo, payload) {
+  addDoc (zoneSlug, versionNo, payload) {
     this._ensureIsLoaded()
 
+    ow(zoneSlug, ow.string.label('zoneSlug').nonEmpty)
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
     ow(payload, ow.object.label('payload').hasKeys('permalink', 'jsonPath', 'title', 'category'))
 
+    /**
+     * Doc property validations
+     */
     ow(payload.permalink, ow.string.label('payload.permalink').nonEmpty)
     ow(payload.jsonPath, ow.string.label('payload.jsonPath').nonEmpty)
     ow(payload.title, ow.string.label('payload.title').nonEmpty)
     ow(payload.category, ow.string.label('payload.category').nonEmpty)
 
     /**
-     * Save version if not already created
+     * Save/update version
      */
-    const version = this.saveVersion({ no: versionNo })
+    const version = this.saveVersion(zoneSlug, { no: versionNo })
     const doc = _.find(version.docs, (d) => d.jsonPath === payload.jsonPath)
 
     /**
@@ -227,31 +363,66 @@ class Db {
   }
 
   /**
-   * Returns an array of existing versions
+   * Returns an array of existing versions for a given
+   * zone.
    *
    * @method getVersions
    *
-   * @return {Array}
+   * @param {String} zoneSlug
+   *
+   * @return {Array|Null}
    */
-  getVersions () {
+  getVersions (zoneSlug) {
     this._ensureIsLoaded()
-    return this.data.versions.map((version) => _.omit(version, ['docs']))
+
+    ow(zoneSlug, ow.string.label('zoneSlug').nonEmpty)
+    const zone = this.getZone(zoneSlug)
+
+    if (!zone) {
+      return null
+    }
+
+    return zone.versions.map((version) => _.omit(version, ['docs']))
   }
 
   /**
-   * Removes a given version and it's docs
+   * Remove zone using it's slug.
+   *
+   * @method removeZone
+   *
+   * @param  {String}   zoneSlug
+   *
+   * @return {void}
+   */
+  removeZone (zoneSlug) {
+    this._ensureIsLoaded()
+
+    ow(zoneSlug, ow.string.label('zoneSlug').nonEmpty)
+    _.remove(this.data.zones, (zone) => zone.slug === zoneSlug)
+  }
+
+  /**
+   * Removes a given version and it's docs.
    *
    * @method removeVersion
    *
+   * @param  {String}      zoneSlug
    * @param  {String}      no
    *
    * @return {void}
    */
-  removeVersion (no) {
+  removeVersion (zoneSlug, no) {
     this._ensureIsLoaded()
 
+    ow(zoneSlug, ow.string.label('zoneSlug').nonEmpty)
     ow(no, ow.string.label('no').nonEmpty)
-    _.remove(this.data.versions, (version) => version.no === no)
+
+    const zone = this.getZone(zoneSlug)
+    if (!zone) {
+      return
+    }
+
+    _.remove(zone.versions, (version) => version.no === no)
   }
 
   /**
@@ -259,18 +430,20 @@ class Db {
    *
    * @method removeDoc
    *
+   * @param  {String}  zoneSlug
    * @param  {String}  versionNo
    * @param  {String}  jsonPath
    *
    * @return {void}
    */
-  removeDoc (versionNo, jsonPath) {
+  removeDoc (zoneSlug, versionNo, jsonPath) {
     this._ensureIsLoaded()
 
+    ow(zoneSlug, ow.string.label('zoneSlug').nonEmpty)
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
     ow(jsonPath, ow.string.label('jsonPath').nonEmpty)
 
-    const version = this.getVersion(versionNo)
+    const version = this.getVersion(zoneSlug, versionNo)
     if (!version) {
       return
     }
@@ -287,11 +460,18 @@ class Db {
    *
    * @return {Object|null}
    */
-  getVersion (no) {
+  getVersion (zoneSlug, no) {
     this._ensureIsLoaded()
 
+    ow(zoneSlug, ow.string.label('zoneSlug').nonEmpty)
     ow(no, ow.string.label('no').nonEmpty)
-    return _.find(this.data.versions, (version) => version.no === no) || null
+
+    const zone = this.getZone(zoneSlug)
+    if (!zone) {
+      return null
+    }
+
+    return _.find(zone.versions, (version) => version.no === no) || null
   }
 
   /**
@@ -299,18 +479,20 @@ class Db {
    *
    * @method getDoc
    *
+   * @param  {String} zoneSlug
    * @param  {String} versionNo
    * @param  {String} jsonPath
    *
    * @return {Object|Null}
    */
-  getDoc (versionNo, jsonPath) {
+  getDoc (zoneSlug, versionNo, jsonPath) {
     this._ensureIsLoaded()
 
+    ow(zoneSlug, ow.string.label('zoneSlug').nonEmpty)
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
-    ow(versionNo, ow.string.label('permalink').nonEmpty)
+    ow(jsonPath, ow.string.label('jsonPath').nonEmpty)
 
-    const version = this.getVersion(versionNo)
+    const version = this.getVersion(zoneSlug, versionNo)
     if (!version) {
       return null
     }
@@ -324,17 +506,19 @@ class Db {
    * @method getDocByPermalink
    *
    * @param  {String} versionNo
+   * @param  {String} zoneSlug
    * @param  {String} permalink
    *
    * @return {Object|null}
    */
-  getDocByPermalink (versionNo, permalink) {
+  getDocByPermalink (zoneSlug, versionNo, permalink) {
     this._ensureIsLoaded()
 
+    ow(zoneSlug, ow.string.label('zoneSlug').nonEmpty)
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
     ow(versionNo, ow.string.label('permalink').nonEmpty)
 
-    const version = this.getVersion(versionNo)
+    const version = this.getVersion(zoneSlug, versionNo)
     if (!version) {
       return null
     }
@@ -348,14 +532,15 @@ class Db {
    *
    * @method duplicateDoc
    *
+   * @param  {String}    zoneSlug
    * @param  {String}    versionNo
    * @param  {String}    permalink
    * @param  {String}    jsonPath
    *
    * @return {Null|Object}
    */
-  duplicateDoc (versionNo, permalink, jsonPath) {
-    const version = this.getVersion(versionNo)
+  duplicateDoc (zoneSlug, versionNo, permalink, jsonPath) {
+    const version = this.getVersion(zoneSlug, versionNo)
     if (!version) {
       return null
     }

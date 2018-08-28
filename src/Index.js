@@ -23,7 +23,7 @@ const _ = require('lodash')
 class Index {
   constructor (indexPath) {
     this.indexPath = indexPath
-    this.blackListedBlockTags = ['pre']
+    this.blackListedBlockTags = ['pre', 'html', 'image', 'imageReference', 'linkReference']
     this.blackListedClasses = ['dimer-highlight', 'toc-container']
     this.headings = ['h1', 'h2', 'h3', 'h4']
 

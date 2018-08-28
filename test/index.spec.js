@@ -560,4 +560,43 @@ test.group('Index', (group) => {
     const hasIndexFile = await fs.exists(indexFile)
     assert.isTrue(hasIndexFile)
   })
+
+  test('do not index images', async (assert) => {
+    const index = new Index(indexFile)
+    const content = dedent`
+    # Hello world
+
+    This is the first paragraph
+
+    ## This is section 2
+    Here's the section 2 content
+
+    ![Foo image](foo.jpg)
+
+    ## This is section 3
+    Here's the section 3 content
+    `
+
+    const markdown = new Markdown(content)
+    const vfile = await markdown.toJSON()
+
+    index.addDoc(vfile.contents, '/hello')
+    assert.deepEqual(index.docs, {
+      '/hello': {
+        title: 'Hello world',
+        body: `This is the first paragraph`,
+        url: '/hello'
+      },
+      '/hello#this-is-section-2': {
+        title: 'This is section 2',
+        body: `Here's the section 2 content`,
+        url: '/hello#this-is-section-2'
+      },
+      '/hello#this-is-section-3': {
+        title: 'This is section 3',
+        body: `Here's the section 3 content`,
+        url: '/hello#this-is-section-3'
+      }
+    })
+  })
 })

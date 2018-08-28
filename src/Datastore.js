@@ -51,16 +51,18 @@ class Datastore {
    *
    * @method saveDoc
    *
+   * @param  {String} zoneSlug
    * @param  {String} versionNo
    * @param  {String} filePath
    * @param  {Object} doc
    *
    * @return {void}
    */
-  async saveDoc (versionNo, filePath, doc) {
+  async saveDoc (zoneSlug, versionNo, filePath, doc) {
     /**
      * Validations before consuming data
      */
+    ow(zoneSlug, ow.string.label('zoneSlug').nonEmpty)
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
     ow(filePath, ow.string.label('filePath').nonEmpty)
     ow(doc, ow.object.label('doc').hasKeys('content', 'permalink', 'title'))
@@ -76,7 +78,7 @@ class Datastore {
     /**
      * Make sure the permalink is not duplicate
      */
-    const existingDoc = this.db.duplicateDoc(versionNo, doc.permalink, jsonPath)
+    const existingDoc = this.db.duplicateDoc(zoneSlug, versionNo, doc.permalink, jsonPath)
     if (existingDoc) {
       const mdName = existingDoc.jsonPath.replace(/\.json$/, '.md')
       const error = new Error(`${mdName} also using the same permalink: ${doc.permalink}`)
@@ -103,7 +105,7 @@ class Datastore {
     /**
      * Add to db
      */
-    this.db.addDoc(versionNo, metaData)
+    this.db.addDoc(zoneSlug, versionNo, metaData)
   }
 
   /**
@@ -111,17 +113,19 @@ class Datastore {
    *
    * @method syncVersions
    *
+   * @param  {String}    zoneSlug
    * @param  {Array}     versions
    *
    * @return {void}
    */
-  async syncVersions (versions) {
+  async syncVersions (zoneSlug, versions) {
+    ow(zoneSlug, ow.string.label('zoneSlug').nonEmpty)
     ow(versions, ow.array.label('versions'))
 
     /**
      * An array of versions that already exists in the database
      */
-    const existingVersions = this.db.getVersions().map((version) => version)
+    const existingVersions = (this.db.getVersions(zoneSlug) || []).map((version) => version)
 
     /**
      * An array of versions removed in the new set of versions we have received
@@ -131,20 +135,20 @@ class Datastore {
     /**
      * Update existing or add new versions
      */
-    versions.forEach((version) => (this.db.saveVersion(version)))
+    versions.forEach((version) => (this.db.saveVersion(zoneSlug, version)))
 
     /**
      * Pulling from the latest database copy to get the normalized
      * copy of versions
      */
-    const added = _.differenceWith(this.db.getVersions(), existingVersions, (source, other) => {
+    const added = _.differenceWith(this.db.getVersions(zoneSlug) || [], existingVersions, (source, other) => {
       return source.no === other.no && source.location === other.location
     })
 
     /**
      * Remove non-existing versions
      */
-    removed.forEach((version) => (this.db.removeVersion(version.no)))
+    removed.forEach((version) => (this.db.removeVersion(zoneSlug, version.no)))
 
     /**
      * Remove content for all versions which are removed. This includes
@@ -162,15 +166,17 @@ class Datastore {
    *
    * @method removeDoc
    *
+   * @param  {String}  zoneSlug
    * @param  {String}  versionNo
    * @param  {String}  filePath
    *
    * @return {void}
    */
-  async removeDoc (versionNo, filePath) {
+  async removeDoc (zoneSlug, versionNo, filePath) {
     /**
      * Validations
      */
+    ow(zoneSlug, ow.string.label('zoneSlug').nonEmpty)
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
     ow(filePath, ow.string.label('filePath').nonEmpty)
 
@@ -184,7 +190,7 @@ class Datastore {
     /**
      * Update db
      */
-    this.db.removeDoc(versionNo, jsonPath)
+    this.db.removeDoc(zoneSlug, versionNo, jsonPath)
   }
 
   /**
@@ -192,11 +198,13 @@ class Datastore {
    *
    * @method getVersions
    *
+   * @param {String} zoneSlug
+   *
    * @return {Array}
    */
-  getVersions () {
-    return this.db.getVersions().map((version) => {
-      version.heroDoc = this.db.getVersion(version.no).docs[0] || null
+  getVersions (zoneSlug) {
+    return this.db.getVersions(zoneSlug).map((version) => {
+      version.heroDoc = this.db.getVersion(zoneSlug, version.no).docs[0] || null
       return version
     })
   }
@@ -209,16 +217,18 @@ class Datastore {
    *
    * @method loadContent
    *
+   * @param  {String}    zoneSlug
    * @param  {String}    versionNo
    * @param  {Object}    doc
    * @param  {Boolean}   [attachVersion = false]
    *
    * @return {Object}
    */
-  async loadContent (versionNo, doc, attachVersion = false) {
+  async loadContent (zoneSlug, versionNo, doc, attachVersion = false) {
     /**
      * Validations
      */
+    ow(zoneSlug, ow.string.label('zoneSlug').nonEmpty)
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
     ow(doc, ow.object.label('doc').hasKeys('jsonPath'))
     ow(doc.jsonPath, ow.string.label('doc.jsonPath').nonEmpty)
@@ -230,7 +240,7 @@ class Datastore {
      * Attach the version node to the doc, when request for it
      */
     if (attachVersion) {
-      finalDoc.version = _.omit(this.db.getVersion(versionNo), 'docs')
+      finalDoc.version = _.omit(this.db.getVersion(zoneSlug, versionNo), 'docs')
     }
 
     return finalDoc
@@ -241,6 +251,7 @@ class Datastore {
    *
    * @method getTree
    *
+   * @param  {String}  zoneSlug
    * @param  {String}  versionNo
    * @param  {Boolean} [limit = 0]
    * @param  {Boolean} [withContent = false]
@@ -248,7 +259,8 @@ class Datastore {
    *
    * @return {Array|Null}
    */
-  async getTree (versionNo, limit = 0, withContent = false, attachVersion = false) {
+  async getTree (zoneSlug, versionNo, limit = 0, withContent = false, attachVersion = false) {
+    ow(zoneSlug, ow.string.label('zoneSlug').nonEmpty)
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
 
     /**
@@ -256,7 +268,7 @@ class Datastore {
      * differentiate between non-existing version and
      * version with no docs.
      */
-    const version = this.db.getVersion(versionNo)
+    const version = this.db.getVersion(zoneSlug, versionNo)
     if (!version) {
       return null
     }
@@ -278,7 +290,7 @@ class Datastore {
      * a node
      */
     if (withContent) {
-      docs = await Promise.all(docs.map((doc) => this.loadContent(versionNo, doc, attachVersion)))
+      docs = await Promise.all(docs.map((doc) => this.loadContent(zoneSlug, versionNo, doc, attachVersion)))
     }
 
     return docs.reduce((categories, doc) => {
@@ -304,14 +316,19 @@ class Datastore {
    *
    * @method getDoc
    *
+   * @param  {String}  zoneSlug
    * @param  {String}  versionNo
    * @param  {String}  filePath
    * @param  {Boolean} attachVersion
    *
    * @return {Object}
    */
-  async getDoc (versionNo, filePath, attachVersion) {
-    const doc = this.db.getDoc(versionNo, this._normalizePath(filePath))
+  async getDoc (zoneSlug, versionNo, filePath, attachVersion) {
+    ow(zoneSlug, ow.string.label('zoneSlug').nonEmpty)
+    ow(versionNo, ow.string.label('versionNo').nonEmpty)
+    ow(filePath, ow.string.label('filePath').nonEmpty)
+
+    const doc = this.db.getDoc(zoneSlug, versionNo, this._normalizePath(filePath))
 
     /**
      * Return null if doc is missing
@@ -320,7 +337,7 @@ class Datastore {
       return null
     }
 
-    return this.loadContent(versionNo, doc, attachVersion)
+    return this.loadContent(zoneSlug, versionNo, doc, attachVersion)
   }
 
   /**
@@ -328,14 +345,19 @@ class Datastore {
    *
    * @method getDocByPermalink
    *
+   * @param  {String}     zoneSlug
    * @param  {String}     versionNo
    * @param  {String}     permalink
    * @param  {Boolean}    [attachVersion = false]
    *
    * @return {Object}
    */
-  async getDocByPermalink (versionNo, permalink, attachVersion = false) {
-    const doc = this.db.getDocByPermalink(versionNo, permalink)
+  async getDocByPermalink (zoneSlug, versionNo, permalink, attachVersion = false) {
+    ow(zoneSlug, ow.string.label('zoneSlug').nonEmpty)
+    ow(versionNo, ow.string.label('versionNo').nonEmpty)
+    ow(permalink, ow.string.label('permalink').nonEmpty)
+
+    const doc = this.db.getDocByPermalink(zoneSlug, versionNo, permalink)
 
     /**
      * Return null if doc is missing
@@ -344,7 +366,7 @@ class Datastore {
       return null
     }
 
-    return this.loadContent(versionNo, doc, attachVersion)
+    return this.loadContent(zoneSlug, versionNo, doc, attachVersion)
   }
 
   /**
@@ -353,22 +375,24 @@ class Datastore {
    *
    * @method redirectedPermalink
    *
+   * @param  {String}            zoneSlug
    * @param  {String}            versionNo
    * @param  {String}            permalink
    *
    * @return {String|Null}
    */
-  redirectedPermalink (versionNo, permalink) {
+  redirectedPermalink (zoneSlug, versionNo, permalink) {
     /**
      * Validations
      */
+    ow(zoneSlug, ow.string.label('zoneSlug').nonEmpty)
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
     ow(permalink, ow.string.label('permalink').nonEmpty)
 
     /**
      * Return null if version is missing
      */
-    const version = this.db.getVersion(versionNo)
+    const version = this.db.getVersion(zoneSlug, versionNo)
     if (!version) {
       return null
     }
@@ -418,7 +442,7 @@ class Datastore {
    * @return {Object}
    */
   getConfig () {
-    return _.omit(this.db.data, ['versions', 'compilerOptions'])
+    return _.omit(this.db.data, ['zones', 'compilerOptions'])
   }
 
   /**
@@ -426,11 +450,13 @@ class Datastore {
    *
    * @method indexVersion
    *
+   * @param  {String}     zoneSlug
    * @param  {String}     versionNo
    *
    * @return {void}
    */
-  async indexVersion (versionNo) {
+  async indexVersion (zoneSlug, versionNo) {
+    ow(zoneSlug, ow.string.label('zoneSlug').nonEmpty)
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
 
     const index = new Index(this.paths.searchIndexFile(versionNo))
@@ -438,7 +464,7 @@ class Datastore {
     /**
      * Get the entire tree with the loaded content
      */
-    const tree = await this.getTree(versionNo, 0, true)
+    const tree = await this.getTree(zoneSlug, versionNo, 0, true)
 
     tree.forEach(({ docs }) => {
       docs.forEach((doc) => {
@@ -457,13 +483,15 @@ class Datastore {
    *
    * @method search
    *
+   * @param  {String} zoneSlug
    * @param  {String} versionNo
    * @param  {String} term
    * @param  {String} limit
    *
    * @return {Array}
    */
-  async search (versionNo, term, limit) {
+  async search (zoneSlug, versionNo, term, limit) {
+    ow(zoneSlug, ow.string.label('zoneSlug').nonEmpty)
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
     ow(versionNo, ow.string.label('term').nonEmpty)
 

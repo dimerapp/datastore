@@ -4,8 +4,7 @@
   "license": "MIT",
   "services": [
     "travis",
-    "appveyor",
-    "coveralls"
+    "appveyor"
   ],
   "appveyorUsername": "thetutlage",
   "minNodeVersion": "8.0.0"

@@ -1,3 +1,15 @@
+<a name="2.0.0"></a>
+# [2.0.0](https://github.com/dimerapp/datastore/compare/v1.0.19...v2.0.0) (2018-08-29)
+
+
+### Features
+
+* **db:** add support for zones inside db ([62eda3d](https://github.com/dimerapp/datastore/commit/62eda3d))
+* **zones:** add support to sync zones ([7f34b7e](https://github.com/dimerapp/datastore/commit/7f34b7e))
+* **zones:** make search and datastore to support zones ([68482d6](https://github.com/dimerapp/datastore/commit/68482d6))
+
+
+
 <a name="1.0.19"></a>
 ## [1.0.19](https://github.com/dimerapp/datastore/compare/v1.0.18...v1.0.19) (2018-08-03)
 

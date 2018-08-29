@@ -73,13 +73,9 @@ class Db {
    * @private
    */
   _normalizeZone (zone) {
-    const normalizedZone = Object.assign({
-      name: zone.slug,
-      versions: []
+    return Object.assign({
+      name: zone.slug
     }, zone)
-
-    normalizedZone.versions = normalizedZone.versions.map((version) => this._normalizeVersion(version))
-    return normalizedZone
   }
 
   /**
@@ -188,7 +184,11 @@ class Db {
   async load () {
     try {
       this.data = await fs.readJSON(this.filePath)
-      this.data.zones = (this.data.zones || []).map((zone) => this._normalizeZone(zone))
+      this.data.zones = (this.data.zones || []).map((zone) => {
+        zone = this._normalizeZone(zone)
+        zone.versions = zone.versions.map((version) => this._normalizeVersion(version))
+        return zone
+      })
     } catch (error) {
       this.data = this._initialPayload()
     }
@@ -267,6 +267,10 @@ class Db {
   saveZone (payload) {
     this._ensureIsLoaded()
 
+    if (payload.versions) {
+      throw new Error('Make use of syncVersions to update version for a zone')
+    }
+
     ow(payload, ow.object.label('payload').hasKeys('slug'))
     ow(payload.slug, ow.string.label('payload.slug').nonEmpty)
 
@@ -277,6 +281,7 @@ class Db {
      */
     if (!zone) {
       payload = this._normalizeZone(payload)
+      payload.versions = []
       this.data.zones.push(payload)
       return payload
     }
@@ -360,6 +365,11 @@ class Db {
 
     Object.assign(doc, payload)
     return doc
+  }
+
+  getZones () {
+    this._ensureIsLoaded()
+    return this.data.zones
   }
 
   /**

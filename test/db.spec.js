@@ -772,7 +772,7 @@ test.group('Db', (group) => {
     const db = new Db(dbFile)
     await db.load()
 
-    db.saveZone({ slug: 'default', versions: [] })
+    db.saveZone({ slug: 'default' })
     await db.persist()
 
     const contents = await fs.readJSON(dbFile)

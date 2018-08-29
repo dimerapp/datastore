@@ -93,6 +93,72 @@ class Datastore {
   }
 
   /**
+   * Syncs zones with the db. Also versions will inside zones will
+   * be synced automatically.
+   *
+   * @method syncZones
+   *
+   * @param  {Array}  zones
+   *
+   * @return {Object}
+   */
+  async syncZones (zones) {
+    ow(zones, ow.array.label('zones'))
+
+    /**
+     * Get existing zones
+     */
+    const existingZones = this.db.getZones().map((zone) => zone)
+
+    /**
+     * Find the zones which have been removed
+     */
+    const removed = _.differenceBy(existingZones, zones, (zone) => zone.slug)
+    await Promise.all(removed.map((zone) => {
+      this.db.removeZone(zone.slug)
+      return fs.remove(this.paths.zonePath(zone.slug))
+    }))
+
+    /**
+     * Find the one's newly added
+     */
+    let added = _.differenceBy(zones, existingZones, (zone) => zone.slug)
+    added = await Promise.all(added.map((zone) => {
+      this.db.saveZone(_.omit(zone, ['versions']))
+      return new Promise((resolve, reject) => {
+        this
+          .syncVersions(zone.slug, zone.versions)
+          .then((versions) => {
+            zone.versions = versions
+            resolve(zone)
+          })
+          .catch(reject)
+      })
+    }))
+
+    /**
+     * Find the one's updated
+     */
+    let updated = zones.filter((zone) => {
+      return !added.find((az) => az.slug === zone.slug) && !removed.find((rz) => rz.slug === zone.slug)
+    })
+    updated = await Promise.all(updated.map((zone) => {
+      this.db.saveZone(_.omit(zone, ['versions']))
+      return new Promise((resolve, reject) => {
+        this
+          .syncVersions(zone.slug, zone.versions)
+          .then((versions) => {
+            zone.versions = versions
+            resolve(zone)
+          })
+          .catch(reject)
+      })
+    }))
+
+    return { removed, added, updated }
+  }
+
+  /**
    * Syncs all the versions to the db
    *
    * @method syncVersions
@@ -100,16 +166,21 @@ class Datastore {
    * @param  {String}    zoneSlug
    * @param  {Array}     versions
    *
-   * @return {void}
+   * @return {Object}
    */
   async syncVersions (zoneSlug, versions) {
     ow(zoneSlug, ow.string.label('zoneSlug').nonEmpty)
     ow(versions, ow.array.label('versions'))
 
     /**
+     * Normalize versions by remove docs props (if any)
+     */
+    versions = versions.map((version) => _.omit(version, ['docs']))
+
+    /**
      * An array of versions that already exists in the database
      */
-    const existingVersions = (this.db.getVersions(zoneSlug) || []).map((version) => version)
+    const existingVersions = (this.db.getVersions(zoneSlug) || []).map((version) => _.omit(version, ['docs']))
 
     /**
      * An array of versions removed in the new set of versions we have received
@@ -117,32 +188,33 @@ class Datastore {
     const removed = _.differenceBy(existingVersions, versions, (version) => version.no)
 
     /**
-     * Update existing or add new versions
-     */
-    versions.forEach((version) => (this.db.saveVersion(zoneSlug, version)))
-
-    /**
-     * Pulling from the latest database copy to get the normalized
-     * copy of versions
-     */
-    const added = _.differenceWith(this.db.getVersions(zoneSlug) || [], existingVersions, (source, other) => {
-      return source.no === other.no && source.location === other.location
-    })
-
-    /**
-     * Remove non-existing versions
-     */
-    removed.forEach((version) => (this.db.removeVersion(zoneSlug, version.no)))
-
-    /**
-     * Remove content for all versions which are removed. This includes
-     * the version files and search indexes.
+     * Remove versions and their docs for the one's which are
+     * removed.
      */
     await Promise.all([removed.map((version) => {
+      this.db.removeVersion(zoneSlug, version.no)
       return fs.remove(this.paths.versionPath(zoneSlug, version.no))
     })])
 
-    return { added, removed }
+    /**
+     * Find the added ones and save them to the db
+     */
+    const added = _.differenceWith(versions, existingVersions, (source, other) => {
+      return source.no === other.no && source.location === other.location
+    }).map((version) => {
+      return _.omit(this.db.saveVersion(zoneSlug, version), ['docs'])
+    })
+
+    /**
+     * Find the updated ones and update them in the db
+     */
+    const updated = versions.filter((version) => {
+      return !added.find((av) => av.no === version.no) && !removed.find((rv) => rv.no === version.no)
+    }).map((version) => {
+      return _.omit(this.db.saveVersion(zoneSlug, version), ['docs'])
+    })
+
+    return { added, removed, updated }
   }
 
   /**

@@ -173,7 +173,6 @@ test.group('Datastore', (group) => {
     ])
 
     await store.persist()
-
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
 
     assert.deepEqual(removed, [])
@@ -299,7 +298,7 @@ test.group('Datastore', (group) => {
       content: nodes
     })
 
-    const { removed, added } = await store.syncVersions('guides', [
+    const { removed, added, updated } = await store.syncVersions('guides', [
       {
         no: '1.0.0',
         name: 'Version 1'
@@ -310,6 +309,16 @@ test.group('Datastore', (group) => {
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
     assert.deepEqual(added, [])
+    assert.deepEqual(updated, [
+      {
+        no: '1.0.0',
+        name: 'Version 1',
+        default: false,
+        depreciated: false,
+        draft: false
+      }
+    ])
+
     assert.deepEqual(removed, [
       {
         no: '1.0.1',
@@ -1458,6 +1467,232 @@ test.group('Datastore', (group) => {
                 category: 'root'
               }
             ]
+          }
+        ]
+      }]
+    })
+  })
+
+  test('sync zones', async (assert) => {
+    const store = new Datastore(ctx)
+    await store.db.load()
+
+    const { added, removed } = await store.syncZones([{
+      slug: 'guides',
+      name: 'guides',
+      versions: [
+        {
+          no: '1.0.0'
+        },
+        {
+          no: '1.0.1',
+          default: true
+        }
+      ]
+    }])
+
+    await store.persist()
+    const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
+
+    assert.deepEqual(removed, [])
+    assert.deepEqual(added, [{
+      name: 'guides',
+      slug: 'guides',
+      versions: {
+        added: [
+          {
+            no: '1.0.0',
+            name: '1.0.0',
+            default: false,
+            depreciated: false,
+            draft: false
+          },
+          {
+            no: '1.0.1',
+            name: '1.0.1',
+            default: true,
+            depreciated: false,
+            draft: false
+          }
+        ],
+        removed: [],
+        updated: []
+      }
+    }])
+
+    assert.deepEqual(metaFile, {
+      zones: [{
+        slug: 'guides',
+        name: 'guides',
+        versions: [
+          {
+            no: '1.0.0',
+            name: '1.0.0',
+            default: false,
+            depreciated: false,
+            draft: false,
+            docs: []
+          },
+          {
+            no: '1.0.1',
+            name: '1.0.1',
+            default: true,
+            depreciated: false,
+            draft: false,
+            docs: []
+          }
+        ]
+      }]
+    })
+  })
+
+  test('remove old zones and its versions', async (assert) => {
+    const store = new Datastore(ctx)
+    await store.db.load()
+
+    store.db.saveVersion('guides', {
+      no: '1.0.0'
+    })
+
+    store.db.saveVersion('api', {
+      no: '1.0.0'
+    })
+
+    const { added, removed, updated } = await store.syncZones([{
+      slug: 'guides',
+      name: 'guides',
+      versions: [
+        {
+          no: '1.0.0',
+          default: true
+        }
+      ]
+    }])
+
+    await store.persist()
+    const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
+
+    assert.deepEqual(removed, [{
+      slug: 'api',
+      name: 'api',
+      versions: [
+        {
+          no: '1.0.0',
+          name: '1.0.0',
+          default: false,
+          depreciated: false,
+          draft: false,
+          docs: []
+        }
+      ]
+    }])
+
+    assert.deepEqual(added, [])
+    assert.deepEqual(updated, [{
+      slug: 'guides',
+      name: 'guides',
+      versions: {
+        added: [],
+        removed: [],
+        updated: [
+          {
+            no: '1.0.0',
+            name: '1.0.0',
+            default: true,
+            depreciated: false,
+            draft: false
+          }
+        ]
+      }
+    }])
+
+    assert.deepEqual(metaFile, {
+      zones: [{
+        slug: 'guides',
+        name: 'guides',
+        versions: [
+          {
+            no: '1.0.0',
+            name: '1.0.0',
+            default: true,
+            depreciated: false,
+            draft: false,
+            docs: []
+          }
+        ]
+      }]
+    })
+  })
+
+  test('update versions of updated zones', async (assert) => {
+    const store = new Datastore(ctx)
+    await store.db.load()
+
+    store.db.saveVersion('guides', { no: '1.0.0' })
+    store.db.saveVersion('api', { no: '1.0.0' })
+
+    const { added, removed, updated } = await store.syncZones([{
+      slug: 'guides',
+      name: 'The Guides',
+      versions: [
+        {
+          no: '1.0.1',
+          default: true
+        }
+      ]
+    }])
+
+    await store.persist()
+    const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
+
+    assert.deepEqual(removed, [{
+      slug: 'api',
+      name: 'api',
+      versions: [{
+        no: '1.0.0',
+        name: '1.0.0',
+        default: false,
+        depreciated: false,
+        draft: false,
+        docs: []
+      }]
+    }])
+
+    assert.deepEqual(added, [])
+    assert.deepEqual(updated, [{
+      slug: 'guides',
+      name: 'The Guides',
+      versions: {
+        updated: [],
+        removed: [{
+          no: '1.0.0',
+          name: '1.0.0',
+          default: false,
+          depreciated: false,
+          draft: false
+        }],
+        added: [{
+          no: '1.0.1',
+          name: '1.0.1',
+          default: true,
+          depreciated: false,
+          draft: false
+        }]
+      }
+    }])
+
+    assert.deepEqual(metaFile, {
+      zones: [{
+        slug: 'guides',
+        name: 'The Guides',
+        versions: [
+          {
+            no: '1.0.1',
+            name: '1.0.1',
+            default: true,
+            depreciated: false,
+            draft: false,
+            docs: []
           }
         ]
       }]

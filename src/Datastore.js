@@ -271,6 +271,20 @@ class Datastore {
   }
 
   /**
+   * Returns an array of zones
+   *
+   * @method getZones
+   *
+   * @return {Array}
+   */
+  getZones () {
+    return this.db.getZones().map((zone) => {
+      const versions = this.getVersions(zone.slug, zone.versions)
+      return Object.assign({}, zone, { versions })
+    })
+  }
+
+  /**
    * Loads content for a given doc and attaches it as a property
    * on the object.
    *

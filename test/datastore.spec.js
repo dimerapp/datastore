@@ -570,6 +570,13 @@ test.group('Datastore', (group) => {
     })
   })
 
+  test('return null from getVersions when zone is missing', async (assert) => {
+    const store = new Datastore(ctx)
+    await store.db.load()
+
+    assert.isNull(store.getVersions('faq'))
+  })
+
   test('return an array of versions', async (assert) => {
     const store = new Datastore(ctx)
     await store.db.load()

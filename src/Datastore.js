@@ -256,10 +256,15 @@ class Datastore {
    *
    * @param {String} zoneSlug
    *
-   * @return {Array}
+   * @return {Array|Null}
    */
   getVersions (zoneSlug) {
-    return this.db.getVersions(zoneSlug).map((version) => {
+    const versions = this.db.getVersions(zoneSlug)
+    if (!versions) {
+      return null
+    }
+
+    return versions.map((version) => {
       version.heroDoc = this.db.getVersion(zoneSlug, version.no).docs[0] || null
       return version
     })

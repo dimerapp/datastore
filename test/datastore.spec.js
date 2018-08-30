@@ -570,6 +570,13 @@ test.group('Datastore', (group) => {
     })
   })
 
+  test('return null from getVersions when zone is missing', async (assert) => {
+    const store = new Datastore(ctx)
+    await store.db.load()
+
+    assert.isNull(store.getVersions('faq'))
+  })
+
   test('return an array of versions', async (assert) => {
     const store = new Datastore(ctx)
     await store.db.load()
@@ -1697,5 +1704,42 @@ test.group('Datastore', (group) => {
         ]
       }]
     })
+  })
+
+  test('return an array of zones', async (assert) => {
+    const store = new Datastore(ctx)
+    await store.db.load()
+
+    const nodes = {
+      type: 'root',
+      children: [{}]
+    }
+
+    await store.saveDoc('faq', '1.0.0', 'foo.md', {
+      title: 'Hello world',
+      permalink: '/hello',
+      content: nodes
+    })
+
+    const versions = store.getZones('faq')
+    assert.deepEqual(versions, [{
+      slug: 'faq',
+      name: 'faq',
+      versions: [
+        {
+          no: '1.0.0',
+          name: '1.0.0',
+          default: false,
+          depreciated: false,
+          draft: false,
+          heroDoc: {
+            jsonPath: 'foo.json',
+            title: 'Hello world',
+            permalink: '/hello',
+            category: 'root'
+          }
+        }
+      ]
+    }])
   })
 })

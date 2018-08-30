@@ -1,3 +1,18 @@
+<a name="2.0.1"></a>
+## [2.0.1](https://github.com/dimerapp/datastore/compare/v2.0.0...v2.0.1) (2018-08-30)
+
+
+### Bug Fixes
+
+* **datastore:** getVersions return null when parent zone is missing ([6ebdf94](https://github.com/dimerapp/datastore/commit/6ebdf94))
+
+
+### Features
+
+* **datastore:** implement getZones fn ([f8ad8b8](https://github.com/dimerapp/datastore/commit/f8ad8b8))
+
+
+
 <a name="2.0.0"></a>
 # [2.0.0](https://github.com/dimerapp/datastore/compare/v1.0.19...v2.0.0) (2018-08-29)
 

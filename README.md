@@ -257,7 +257,7 @@ await store.indexVersion('guides', 'v4.0')
 And then later search
 
 ```js
-const results = await store.search('guides', 'v4.0', 'What is AdonisJs?')
+const results = await store.search('guides', 'v4.0', 'Yaml')
 ```
 
 Following will be the output of search results
@@ -266,30 +266,36 @@ Following will be the output of search results
 [
   {
     ref: '/yaml-front-matter',
-    marks: {
-      body: [
+    title: {
+      score: 3.10,
+      marks: [
         {
           type: 'raw',
+          text: 'What is'
+        },
+        {
+          type: 'mark',
+          text: 'Yaml'
+        },
+        {
+          type: 'raw',
+          text: 'frontmatter'
+        }
+      ]
+    },
+    body: [
+      {
+        score: 2.984,
+        marks: [{
+          type: 'mark',
           text: 'Yaml '
         },
         {
-          type: 'mark',
-          text: 'front'
-        },
-        {
           type: 'raw',
-          text: ' '
-        },
-        {
-          type: 'mark',
-          text: 'matter'
-        },
-        {
-          type: 'raw',
-          text: ' is used for matching content'
-        }
-      ]
-    }
+          text: 'front matter is used for'
+        }]
+      }
+    ]
   }
 ]
 ```

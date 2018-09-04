@@ -1,3 +1,20 @@
+<a name="3.0.0"></a>
+# [3.0.0](https://github.com/dimerapp/datastore/compare/v2.0.1...v3.0.0) (2018-09-04)
+
+
+### Code Refactoring
+
+* **search:** improve indexing to have shorter content text ([212bf53](https://github.com/dimerapp/datastore/commit/212bf53))
+* **search:** return segregated search results ([9ec65e9](https://github.com/dimerapp/datastore/commit/9ec65e9))
+
+
+### BREAKING CHANGES
+
+* **search:** changes in the structure of search results
+* **search:** the index structure has been changed from title,body to just content
+
+
+
 <a name="2.0.1"></a>
 ## [2.0.1](https://github.com/dimerapp/datastore/compare/v2.0.0...v2.0.1) (2018-08-30)
 

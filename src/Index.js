@@ -23,7 +23,7 @@ const _ = require('lodash')
 class Index {
   constructor (indexPath) {
     this.indexPath = indexPath
-    this.blackListedBlockTags = ['pre', 'html', 'image', 'imageReference', 'linkReference']
+    this.blackListedBlockTags = ['pre', 'html', 'image', 'imageReference', 'linkReference', 'th']
     this.blackListedClasses = ['dimer-highlight', 'toc-container']
     this.headings = ['h1', 'h2', 'h3', 'h4']
 
@@ -56,7 +56,9 @@ class Index {
    * @private
    */
   _isWhiteListed ({ tag, props }) {
-    return this.blackListedBlockTags.indexOf(tag) === -1 && this.blackListedClasses.indexOf(props.className) === -1
+    return this.blackListedBlockTags.indexOf(tag) === -1 && _.every(props.className, (className) => {
+      return !_.includes(this.blackListedClasses, className)
+    })
   }
 
   /**
@@ -82,19 +84,60 @@ class Index {
    *
    * @param  {Object}     node
    *
-   * @return {String}
+   * @return {Array}
    *
    * @private
    */
   _nodeToString (node) {
-    if (node.type === 'element') {
-      if (this._isWhiteListed(node)) {
-        return node.children.map((n) => this._nodeToString(n)).join(this.spacer[node.tag] || '')
-      }
-      return ''
+    if (node.type !== 'element') {
+      return [toString(node)]
     }
 
-    return toString(node)
+    /**
+     * Return if node is not white listed
+     */
+    if (!this._isWhiteListed(node)) {
+      return []
+    }
+
+    /**
+     * For the paragraph, we make everything into a big string
+     */
+    if (node.tag === 'p') {
+      const parsed = toString(node)
+      return parsed.length ? [parsed] : []
+    }
+
+    /**
+     * For each tr, we ignore the {TH's} and process
+     * the {TD's} as one space seperated string.
+     */
+    if (node.tag === 'tr') {
+      return node.children.reduce((result, item) => {
+        if (!this._isWhiteListed(item)) {
+          return result
+        }
+
+        const parsed = toString(item)
+        if (parsed.length) {
+          result = result.concat(parsed)
+        }
+
+        return result
+      }, []).join(' ')
+    }
+
+    /**
+     * For everything else, we just loop over the children
+     * and convert them one by one.
+     */
+    return node.children.reduce((result, item) => {
+      const parsed = this._nodeToString(item)
+      if (parsed.length) {
+        result = result.concat(parsed)
+      }
+      return result
+    }, [])
   }
 
   /**
@@ -117,12 +160,15 @@ class Index {
       .map((child) => {
         if (this._isHeading(child)) {
           sectionUrl = child.tag === 'h1' ? permalink : `${permalink}${child.children[0].props.href}`
-          this.docs[sectionUrl] = { title: toString(child), body: '', url: sectionUrl }
+          this.docs[sectionUrl] = { title: toString(child), nodes: [], url: sectionUrl }
           return
         }
 
         if (sectionUrl && this.docs[sectionUrl]) {
-          this.docs[sectionUrl].body += this._nodeToString(child)
+          const parsed = this._nodeToString(child)
+          if (parsed.length) {
+            this.docs[sectionUrl].nodes = this.docs[sectionUrl].nodes.concat(parsed)
+          }
         }
       })
   }
@@ -139,11 +185,28 @@ class Index {
 
     const index = lunr(function () {
       this.ref('url')
-      this.field('title', { boost: 2 })
-      this.field('body', { boost: 1 })
+      this.field('content', { boost: 2 })
       this.metadataWhitelist = ['position']
 
-      _.each(self.docs, (doc) => (this.add(doc)))
+      _.each(self.docs, (doc) => {
+        /**
+         * The title will be first item for that doc
+         */
+        this.add({
+          url: `${doc.url}@lvl0`,
+          content: doc.title
+        })
+
+        /**
+         * Then we save each node
+         */
+        _.each(doc.nodes, (content, index) => {
+          this.add({
+            url: `${doc.url}@lvl${index + 1}`,
+            content: content
+          })
+        })
+      })
     })
 
     await fs.outputJSON(this.indexPath, {

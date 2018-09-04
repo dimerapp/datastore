@@ -1036,7 +1036,7 @@ test.group('Datastore', (group) => {
     assert.deepEqual(indexFile.docs, {
       '/hello#this-is-a-section': {
         title: 'This is a section',
-        body: 'Some content here',
+        nodes: ['Some content here'],
         url: '/hello#this-is-a-section'
       }
     })
@@ -1047,7 +1047,7 @@ test.group('Datastore', (group) => {
     assert.deepEqual(indexFile1.docs, {
       '/hello#this-is-a-section': {
         title: 'This is a section',
-        body: 'Some content here',
+        nodes: ['Some content here'],
         url: '/hello#this-is-a-section'
       }
     })
@@ -1092,13 +1092,13 @@ test.group('Datastore', (group) => {
     let dbSearch = await store.search('guides', '1.0.0', 'Database')
     let routingSearch = await store.search('guides', '1.0.0', 'Routing')
 
-    assert.equal(dbSearch[0].ref, '/hello#database')
+    assert.equal(dbSearch[0].url, '/hello#database')
     assert.deepEqual(routingSearch, [])
 
     dbSearch = await store.search('guides', '1.0.1', 'Database')
     routingSearch = await store.search('guides', '1.0.1', 'Routing')
 
-    assert.equal(routingSearch[0].ref, '/hello#routing')
+    assert.equal(routingSearch[0].url, '/hello#routing')
     assert.deepEqual(dbSearch, [])
   })
 

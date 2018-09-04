@@ -21,7 +21,7 @@
     "@dimerapp/utils": "^2.0.1",
     "fs-extra": "^7.0.0",
     "lodash": "^4.17.10",
-    "lunr": "^2.3.2",
+    "lunr": "^2.3.3",
     "mdast-util-to-string": "^1.0.5",
     "ow": "^0.6.0",
     "steno": "^0.4.4"
@@ -29,7 +29,7 @@
   "devDependencies": {
     "@adonisjs/mrm-preset": "^1.0.11",
     "@dimerapp/context": "^2.0.0",
-    "@dimerapp/markdown": "^3.0.0",
+    "@dimerapp/markdown": "^3.1.1",
     "commitizen": "^2.10.1",
     "cz-conventional-changelog": "^2.1.0",
     "dedent": "^0.7.0",
@@ -37,7 +37,7 @@
     "japa-cli": "^1.0.1",
     "mrm": "^1.2.1",
     "pkg-ok": "^2.2.0",
-    "standard": "^12.0.0"
+    "standard": "^12.0.1"
   },
   "config": {
     "commitizen": {

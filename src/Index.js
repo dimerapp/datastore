@@ -56,7 +56,9 @@ class Index {
    * @private
    */
   _isWhiteListed ({ tag, props }) {
-    return this.blackListedBlockTags.indexOf(tag) === -1 && this.blackListedClasses.indexOf(props.className) === -1
+    return this.blackListedBlockTags.indexOf(tag) === -1 && _.every(props.className, (className) => {
+      return !_.includes(this.blackListedClasses, className)
+    })
   }
 
   /**

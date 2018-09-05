@@ -1,3 +1,13 @@
+<a name="3.0.1"></a>
+## [3.0.1](https://github.com/dimerapp/datastore/compare/v3.0.0...v3.0.1) (2018-09-05)
+
+
+### Bug Fixes
+
+* **search:** stop search from breaking when special chars are used ([f0be355](https://github.com/dimerapp/datastore/commit/f0be355))
+
+
+
 <a name="3.0.0"></a>
 # [3.0.0](https://github.com/dimerapp/datastore/compare/v2.0.1...v3.0.0) (2018-09-04)
 

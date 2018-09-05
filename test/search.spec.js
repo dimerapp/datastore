@@ -343,4 +343,69 @@ test.group('Search', (group) => {
       }
     ])
   })
+
+  test('return first paragraph when nothing matches in body but does matches in title', async (assert) => {
+    const content = dedent`
+    # Hello world
+
+    This is the first paragraph
+
+    ### This is section2
+    Here's the content
+
+    ## This is section 3
+    Some different content
+    `
+
+    const markdown = new Markdown(content)
+    const vfile = await markdown.toJSON()
+
+    const index = new Index(indexFile)
+    index.addDoc(vfile.contents, '/hello')
+    await index.save()
+
+    const output = await search.search(indexFile, 'section2')
+    assert.equal(output[0].url, '/hello#this-is-section2')
+
+    assert.deepEqual(output[0].title.marks, [
+      {
+        type: 'raw',
+        text: 'This is '
+      },
+      {
+        type: 'mark',
+        text: 'section2'
+      }
+    ])
+
+    assert.deepEqual(output[0].body[0].marks, [
+      {
+        type: 'raw',
+        text: 'Here\'s the content'
+      }
+    ])
+  })
+
+  test('do not break with special chars', async (assert) => {
+    const content = dedent`
+    # Hello world
+
+    This is the first paragraph
+
+    ### This is section2
+    Here's the content
+
+    ## This is section 3
+    Some different content
+    `
+
+    const markdown = new Markdown(content)
+    const vfile = await markdown.toJSON()
+
+    const index = new Index(indexFile)
+    index.addDoc(vfile.contents, '/hello')
+    await index.save()
+
+    await search.search(indexFile, 'https://')
+  })
 })

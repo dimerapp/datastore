@@ -290,58 +290,73 @@ class Search {
     }
 
     /**
-     * Some real shit happens here.
-     *
-     * The results returned by lunrjs is flat. However, we have nested documents inside
-     * each title. So we simply have to re-nest them.
+     * Remove other identifiers to improve search results
      */
-    const queryResults = _.transform(index.index.search(term), (result, node, key) => {
-      if (limit && key === limit) {
-        return false
-      }
-
-      const { url, nodeIndex } = this._getUrlAndNodeIndex(node.ref)
-      if (!result[url] && index.docs[url]) {
-        result[url] = {
-          doc: index.docs[url],
-          title: { score: 0, metadata: null, index: -1 },
-          matchData: []
-        }
-      }
-
-      if (result[url]) {
-        if (nodeIndex === 0) {
-          result[url].title = {
-            index: nodeIndex,
-            score: node.score,
-            metadata: node.matchData.metadata
-          }
-        } else {
-          result[url].matchData.push({
-            index: nodeIndex - 1,
-            score: node.score,
-            metadata: node.matchData.metadata
-          })
-        }
-      }
-
-      return result
-    }, {})
+    term = term.replace(/http(s)?:\/\//, '')
 
     /**
-     * Here we process the nested documents and add highlighting marks to them.
+     * Removing lunrjs keywords, since we don't support user
+     * defined keywords for the search.
      */
-    return _.reduce(queryResults, (result, node) => {
-      result.push({
-        url: node.doc.url,
-        title: this._nodeToMarks(node.title.score, node.title.metadata, node.doc.title),
-        body: _.map(node.matchData, ({ score, index, metadata }) => {
-          return this._nodeToMarks(score, metadata, node.doc.nodes[index])
-        })
-      })
+    term = term.replace(/[-+~^:*]/g, '')
 
-      return result
-    }, [])
+    try {
+      /**
+       * Some real shit happens here.
+       *
+       * The results returned by lunrjs is flat. However, we have nested documents inside
+       * each title. So we simply have to re-nest them.
+       */
+      const queryResults = _.transform(index.index.search(term), (result, node, key) => {
+        if (limit && key === limit) {
+          return false
+        }
+
+        const { url, nodeIndex } = this._getUrlAndNodeIndex(node.ref)
+        if (!result[url] && index.docs[url]) {
+          result[url] = {
+            doc: index.docs[url],
+            title: { score: 0, metadata: null, index: -1 },
+            matchData: []
+          }
+        }
+
+        if (result[url]) {
+          if (nodeIndex === 0) {
+            result[url].title = {
+              index: nodeIndex,
+              score: node.score,
+              metadata: node.matchData.metadata
+            }
+          } else {
+            result[url].matchData.push({
+              index: nodeIndex - 1,
+              score: node.score,
+              metadata: node.matchData.metadata
+            })
+          }
+        }
+
+        return result
+      }, {})
+
+      /**
+       * Here we process the nested documents and add highlighting marks to them.
+       */
+      return _.reduce(queryResults, (result, node) => {
+        result.push({
+          url: node.doc.url,
+          title: this._nodeToMarks(node.title.score, node.title.metadata, node.doc.title),
+          body: node.matchData.length ? _.map(node.matchData, ({ score, index, metadata }) => {
+            return this._nodeToMarks(score, metadata, node.doc.nodes[index])
+          }) : node.doc.nodes.length ? [this._nodeToMarks(0, null, node.doc.nodes[0])] : []
+        })
+
+        return result
+      }, [])
+    } catch (error) {
+      return []
+    }
   }
 }
 

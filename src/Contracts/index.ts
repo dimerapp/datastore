@@ -13,7 +13,6 @@ export type IDocNode = {
   toc: boolean,
   content: any,
   srcPath?: string,
-  jsonPath?: string,
   category?: string,
   sidebarLabel?: string,
   redirects?: string[],

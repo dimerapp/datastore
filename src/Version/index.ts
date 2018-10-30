@@ -9,6 +9,7 @@
 
 import { join, extname } from 'path'
 import { outputJson, remove } from 'fs-extra'
+import ow from 'ow'
 
 import { IDocNode, IConfigVersion } from '../Contracts'
 import { Context } from '../Context'
@@ -22,7 +23,7 @@ type IVersionJSON = {
   no: string,
   name: string,
   location: string,
-  docs: Partial<IDocNode>[],
+  docs: { [jsonPath: string]: Partial<IDocNode> },
 }
 
 /**
@@ -30,7 +31,7 @@ type IVersionJSON = {
  * all read and write operations to deal with the docs of a single version.
  */
 export class Version {
-  public docs = new Map<string, Partial<IDocNode>>()
+  public docs: { [jsonPath: string]: Partial<IDocNode> } = {}
   public isFrozen: boolean = false
 
   constructor (
@@ -70,15 +71,15 @@ export class Version {
    * Scan existing docs for duplicate permalink
    */
   private _scanForDuplicates (permalink: string, jsonPath: string) {
-    const duplicatePath = [...this.docs.keys()].find((docPath) => {
-      return docPath !== jsonPath && this.docs.get(docPath)!.permalink === permalink
+    const duplicatePath = Object.keys(this.docs).find((docPath) => {
+      return docPath !== jsonPath && this.docs[docPath].permalink === permalink
     })
 
     if (!duplicatePath) {
       return
     }
 
-    const duplicateDoc = this.docs.get(duplicatePath)
+    const duplicateDoc = this.docs[duplicatePath]
     const error = new Error(`Duplicate permalink used by ${join(this.docsPath, duplicateDoc!.srcPath!)}`)
     error['ruleId'] = 'duplicate-permalink'
     throw error
@@ -134,6 +135,13 @@ export class Version {
    * 2. The `permalink` is in use already. Since permalinks must be unique
    */
   public async saveDoc (filePath: string, doc: IDocNode): Promise<Error | void> {
+    ow(doc.permalink, ow.string.label('doc.permalink').nonEmpty)
+    ow(doc.title, ow.string.label('doc.title').nonEmpty)
+    ow(doc.content, ow.object.label('doc.title').hasKeys('type', 'children'))
+
+    /**
+     * Ensure version isn't frozen already
+     */
     this._ensureIsntFrozen()
 
     const jsonPath = this._makeJsonPath(filePath)
@@ -149,12 +157,12 @@ export class Version {
      * content and normalize some fields and have different reference in
      * memory.
      */
-    this.docs.set(jsonPath, {
+    this.docs[jsonPath] = {
       title: doc.title,
       srcPath: filePath,
       permalink: doc.permalink,
       toc: doc.toc,
-    })
+    }
 
     debug('saving doc %s', jsonPath)
     await outputJson(jsonPath, doc.content)
@@ -170,7 +178,7 @@ export class Version {
     const jsonPath = this._makeJsonPath(filePath)
     debug('removing doc %s', jsonPath)
 
-    this.docs.delete(jsonPath)
+    delete this.docs[jsonPath]
     await remove(jsonPath)
   }
 
@@ -190,7 +198,7 @@ export class Version {
     /**
      * Free memory
      */
-    this.docs = new Map()
+    this.docs = {}
 
     await remove(this._getBasePath())
   }
@@ -200,16 +208,11 @@ export class Version {
    * be writing to disk using `JSON.stringify`.
    */
   public toJSON (): IVersionJSON {
-    const docsArray: Partial<IDocNode>[] = []
-    this.docs.forEach((doc, jsonPath) => {
-      docsArray.push(Object.assign({ jsonPath }, doc))
-    })
-
     return {
       no: this.no,
       name: this.name!,
       location: this.docsPath,
-      docs: docsArray,
+      docs: this.docs,
     }
   }
 }

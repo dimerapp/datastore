@@ -107,7 +107,7 @@ test.group('Version', (group) => {
     await version.saveDoc('foo.md', doc)
     await version.saveDoc('foo.md', Object.assign(doc, { title: 'Hi foo' }))
 
-    assert.equal(version.docs.get(join(BUILD_DIR, 'api', 'master/1.0.0', 'foo.json'))!.title, 'Hi foo')
+    assert.equal(version.docs[join(BUILD_DIR, 'api', 'master/1.0.0', 'foo.json')].title, 'Hi foo')
   })
 
   test('cleanup version base dir by removing it', async (assert) => {
@@ -227,7 +227,7 @@ test.group('Version', (group) => {
       no: '1.0.0',
       location: 'docs/master',
       name: '1.0.0',
-      docs: [],
+      docs: {},
     })
   })
 
@@ -242,15 +242,14 @@ test.group('Version', (group) => {
       no: '1.0.0',
       location: 'docs/master',
       name: '1.0.0',
-      docs: [
-        {
-          jsonPath: join(BUILD_DIR, 'api', version.uid, 'foo.json'),
+      docs: {
+        [join(BUILD_DIR, 'api', version.uid, 'foo.json')]: {
           srcPath: 'foo.md',
           permalink: 'foo',
           title: 'Hello foo',
           toc: true,
         },
-      ],
+      },
     })
   })
 })

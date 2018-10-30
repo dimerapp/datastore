@@ -8,11 +8,11 @@
     "pretest": "npm run lint",
     "test": "node japaFile.js",
     "prepublishOnly": "npm run build",
+    "lint": "tslint --project tsconfig.json",
     "clean": "del build",
     "compile": "npm run lint && npm run clean && tsc",
     "build": "npm run compile",
-    "commit": "git-cz",
-    "lint": "tslint --project tsconfig.json"
+    "commit": "git-cz"
   },
   "keywords": [],
   "author": "",
@@ -47,11 +47,5 @@
   },
   "gitHooks": {
     "commit-msg": "node ./node_modules/@adonisjs/mrm-preset/validateCommit/conventional/validate.js"
-  },
-  "dependencies": {
-    "debug": "^4.1.0",
-    "fs-extra": "^7.0.0",
-    "ow": "^0.8.0",
-    "steno": "^0.4.4"
   }
 }

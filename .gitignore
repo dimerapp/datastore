@@ -1,5 +1,4 @@
 node_modules
-package-lock.json
 coverage
 .DS_STORE
 .nyc_output
@@ -12,3 +11,4 @@ build
 dist
 yarn.lock
 shrinkwrap.yaml
+package-lock.json

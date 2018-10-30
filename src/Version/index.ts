@@ -57,7 +57,6 @@ export class Version {
    */
   private _getBasePath () {
     const dest = this._ctx.getPath('dest')
-
     if (!dest) {
       const error = new Error('Cannot save docs, without defining the dest path inside context')
       error['ruleId'] = 'internal-error'
@@ -143,7 +142,6 @@ export class Version {
      * Ensure version isn't frozen already
      */
     this._ensureIsntFrozen()
-
     const jsonPath = this._makeJsonPath(filePath)
 
     /**

@@ -47,5 +47,9 @@
   },
   "gitHooks": {
     "commit-msg": "node ./node_modules/@adonisjs/mrm-preset/validateCommit/conventional/validate.js"
+  },
+  "dependencies": {
+    "debug": "^4.1.0",
+    "fs-extra": "^7.0.0"
   }
 }

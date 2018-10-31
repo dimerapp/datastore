@@ -1,0 +1,24 @@
+{
+  "zones": [
+    {
+      "slug": "guides",
+      "name": "guides",
+      "versions": [
+        {
+          "location": "docs/master",
+          "no": "master",
+          "default": false,
+          "depreciated": false,
+          "draft": false
+        }
+      ]
+    },
+    {
+      "slug": "faqs",
+      "name": "faqs",
+      "versions": []
+    }
+  ],
+  "compilerOptions": {},
+  "themeOptions": {}
+}

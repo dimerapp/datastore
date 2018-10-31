@@ -22,6 +22,7 @@ const fixtures = [
   'zone-define-name',
   'zone-as-array',
   'version-as-array',
+  'one-zone-with-no-versions',
 ]
 
 export default fixtures.map((fixture) => {

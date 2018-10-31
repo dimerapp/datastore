@@ -14,6 +14,7 @@ import { ensureDir } from 'fs-extra'
 import { Context } from '../Context'
 import { IProjectConfig, IConfigZone } from '../Contracts'
 import { Version } from '../Version'
+import debug from '../../utils/debug'
 
 type ISyncDiff = {
   added: Version[],
@@ -64,6 +65,7 @@ export class Datastore {
     }
 
     this._basePath = buildPath
+    debug('build path %s', this._basePath)
   }
 
   /**
@@ -102,11 +104,14 @@ export class Datastore {
       zone.versions.forEach((version) => {
         const versionInstance = new Version(version.no, version.location, this._ctx, zone.slug, version.name)
         const existingVersion = this._trackedVersions.find((version) => version.uid === versionInstance.uid)
+
         if (existingVersion) {
+          debug('updating version %s', existingVersion.uid)
           existingVersion.update(version)
           retainedUid.push(existingVersion.uid)
           updated.push(existingVersion)
         } else {
+          debug('adding version %s', versionInstance.uid)
           retainedUid.push(versionInstance.uid)
           added.push(versionInstance)
         }
@@ -115,6 +120,7 @@ export class Datastore {
 
     this._trackedVersions.forEach((version) => {
       if (retainedUid.indexOf(version.uid) === -1) {
+        debug('removing version %s', version.uid)
         removed.push(version)
       }
     })

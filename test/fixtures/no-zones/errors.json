@@ -1,0 +1,6 @@
+[
+  {
+    "message": "Define versions or zones inside dimer.json file",
+    "ruleId": "missing-zones-and-versions"
+  }
+]

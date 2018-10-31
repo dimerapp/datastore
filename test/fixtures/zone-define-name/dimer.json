@@ -1,0 +1,10 @@
+{
+  "zones": {
+    "guides": {
+      "name": "User Guides",
+      "versions": {
+        "master": "docs/master"
+      }
+    }
+  }
+}

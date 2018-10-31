@@ -1,0 +1,10 @@
+[
+  {
+    "message": "Each version must have a version number",
+    "ruleId": "missing-version-no"
+  },
+  {
+    "message": "Each version must specify the docs location",
+    "ruleId": "missing-version-location"
+  }
+]

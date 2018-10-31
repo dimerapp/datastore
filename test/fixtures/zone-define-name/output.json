@@ -1,0 +1,17 @@
+{
+  "zones": [
+    {
+      "slug": "guides",
+      "name": "User Guides",
+      "versions": [
+        {
+          "no": "master",
+          "location": "docs/master",
+          "default": false,
+          "depreciated": false,
+          "draft": false
+        }
+      ]
+    }
+  ]
+}

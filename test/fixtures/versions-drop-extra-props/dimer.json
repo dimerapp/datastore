@@ -1,0 +1,9 @@
+{
+  "versions": {
+    "1.0.0": {
+      "draft": true,
+      "hello": "hi",
+      "location": "docs/master"
+    }
+  }
+}

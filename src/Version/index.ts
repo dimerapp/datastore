@@ -13,6 +13,8 @@ import ow from 'ow'
 
 import { IDocNode, IConfigVersion, IConfigZone } from '../Contracts'
 import { Context } from '../Context'
+import { MissingDestPath, DuplicatePermalink, FrozenVersion } from '../Exceptions'
+
 import debug from '../../utils/debug'
 
 /**
@@ -58,9 +60,7 @@ export class Version {
   private _getBasePath () {
     const dest = this._ctx.getPath('dest')
     if (!dest) {
-      const error = new Error('Cannot save docs, without defining the dest path inside context')
-      error['ruleId'] = 'internal-error'
-      throw error
+      throw MissingDestPath.invoke()
     }
 
     return join(dest, this.uid)
@@ -78,10 +78,7 @@ export class Version {
       return
     }
 
-    const duplicateDoc = this.docs[duplicatePath]
-    const error = new Error(`Duplicate permalink used by ${join(this.docsPath, duplicateDoc!.srcPath!)}`)
-    error['ruleId'] = 'duplicate-permalink'
-    throw error
+    throw DuplicatePermalink.invoke(join(this.docsPath, this.docs[duplicatePath].srcPath!))
   }
 
   /**
@@ -100,9 +97,7 @@ export class Version {
    */
   private _ensureIsntFrozen () {
     if (this.isFrozen) {
-      const error = new Error('Cannot modify deleted version')
-      error['ruleId'] = 'internal-error'
-      throw error
+      throw FrozenVersion.invoke()
     }
   }
 

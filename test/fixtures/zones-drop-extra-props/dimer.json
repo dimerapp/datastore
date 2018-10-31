@@ -1,0 +1,10 @@
+{
+  "zones": {
+    "guides": {
+      "description": "hello world",
+      "versions": {
+        "master": "docs/master"
+      }
+    }
+  }
+}

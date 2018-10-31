@@ -1,0 +1,6 @@
+[
+  {
+    "message": "Make sure to define slug for all zones",
+    "ruleId": "missing-zone-slug"
+  }
+]

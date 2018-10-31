@@ -1,0 +1,5 @@
+{
+  "domain": "adonisjs.dimerapp.com",
+  "theme": "default",
+  "zones": [{"slug":"default","name": "default","versions":[]}]
+}

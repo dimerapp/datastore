@@ -1,0 +1,17 @@
+{
+  "zones": [
+    {
+      "slug": "default",
+      "name": "default",
+      "versions": [
+        {
+          "no": "1.0.0",
+          "location": "docs/master",
+          "default": false,
+          "depreciated": false,
+          "draft": true
+        }
+      ]
+    }
+  ]
+}

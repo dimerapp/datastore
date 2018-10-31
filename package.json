@@ -8,11 +8,11 @@
     "pretest": "npm run lint",
     "test": "node japaFile.js",
     "prepublishOnly": "npm run build",
-    "lint": "tslint --project tsconfig.json",
     "clean": "del build",
     "compile": "npm run lint && npm run clean && tsc",
     "build": "npm run compile",
-    "commit": "git-cz"
+    "commit": "git-cz",
+    "lint": "tslint --project tsconfig.json"
   },
   "keywords": [],
   "author": "",

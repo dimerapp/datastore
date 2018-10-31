@@ -8,7 +8,7 @@
 */
 
 import * as test from 'japa'
-import { join } from 'path'
+import { join, normalize } from 'path'
 import * as fs from 'fs-extra'
 
 import { Version } from '../src/Version'
@@ -89,7 +89,7 @@ test.group('Version', (group) => {
     try {
       await version.saveDoc('foo1.md', Object.assign({}, doc))
     } catch ({ message, ruleId }) {
-      assert.equal(message, 'Duplicate permalink used by docs/master/foo.md')
+      assert.equal(message, `Duplicate permalink used by ${normalize('docs/master/foo.md')}`)
       assert.equal(ruleId, 'duplicate-permalink')
     }
   })

@@ -5,5 +5,7 @@
       "name": "default",
       "versions": [{}]
     }
-  ]
+  ],
+  "compilerOptions": {},
+  "themeOptions": {}
 }

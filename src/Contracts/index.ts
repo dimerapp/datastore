@@ -40,8 +40,8 @@ export type IProjectConfig = {
   cname?: string,
   theme?: string,
   zones: IConfigZone[],
-  compilerOptions?: any,
-  themeOptions?: any,
+  compilerOptions: any,
+  themeOptions: any,
 }
 
 export type IConfigError = {

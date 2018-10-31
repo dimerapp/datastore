@@ -1,0 +1,6 @@
+[
+  {
+    "message": "Make sure to define a zone or a version",
+    "ruleId": "missing-zone-and-version"
+  }
+]

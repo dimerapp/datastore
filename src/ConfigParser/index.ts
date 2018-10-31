@@ -15,6 +15,16 @@ import { Context } from '../Context'
 import { MissingAppRootPath, ConfigNotFound } from '../Exceptions'
 import debug from '../../utils/debug'
 
+/**
+ * Config parser parses the `dimer.json` file and returns back an array of errors
+ * (if any) and the parsed config.
+ *
+ * Config parser is very strict with the fields allowed within the config file and all
+ * non-whitelisted data is trimmed off.
+ *
+ * For saving arbitary data, one should make use of `themeSettings` object and then
+ * use it as required by fetching it from the API.
+ */
 export class ConfigParser {
   private _basePath: string = ''
   constructor (private _ctx: Context) {
@@ -121,7 +131,7 @@ export class ConfigParser {
      * If zones is not a valid object literal, then subsitute it with an
      * empty array
      */
-    if (typeof (config.zones) !== 'object' || Array.isArray(config.zones)) {
+    if (!this._isObject(config.zones)) {
       config.zones = []
       return
     }
@@ -192,6 +202,14 @@ export class ConfigParser {
    * enough info to process docs.
    */
   private _validateZonesAndVersions (config, errorsBag) {
+    if (!config.zones.length) {
+      errorsBag.push({
+        message: 'Make sure to define a zone or a version',
+        ruleId: 'missing-zone-and-version',
+      })
+      return
+    }
+
     config.zones.forEach((zone) => {
       if (!zone.slug) {
         errorsBag.push({
@@ -220,7 +238,11 @@ export class ConfigParser {
     })
   }
 
-  public async parse (): Promise<{ errors: IConfigError[], config?: IProjectConfig }> {
+  /**
+   * Parse the config file and return the normalized config object or an array
+   * of errors (if any)
+   */
+  public async parse (): Promise<{ errors: IConfigError[], config: IProjectConfig }> {
     const errorsBag: IConfigError[] = []
     const config = await this._readConfigFile()
 
@@ -249,8 +271,11 @@ export class ConfigParser {
       errors: errorsBag,
       config: {
         domain: config.domain,
+        cname: config.cname,
         theme: config.theme,
         zones: config.zones,
+        compilerOptions: config.compilerOptions || {},
+        themeOptions: config.themeOptions || {},
       },
     }
   }

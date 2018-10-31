@@ -66,13 +66,6 @@ export class ConfigParser {
    * don't exists together as top level nodes.
    */
   private _validateTopLevelKeys (config, errorsBag: IConfigError[]) {
-    if (!config.versions && !config.zones) {
-      errorsBag.push({
-        message: 'Define versions or zones inside dimer.json file',
-        ruleId: 'missing-zones-and-versions',
-      })
-    }
-
     if (config.versions && config.zones) {
       errorsBag.push({
         message: 'Versions must be nested inside zones',
@@ -202,10 +195,12 @@ export class ConfigParser {
    * enough info to process docs.
    */
   private _validateZonesAndVersions (config, errorsBag) {
+    let versionsCount = 0
+
     if (!config.zones.length) {
       errorsBag.push({
-        message: 'Make sure to define a zone or a version',
-        ruleId: 'missing-zone-and-version',
+        message: 'Define atleast one version to process documentation',
+        ruleId: 'missing-zones-and-versions',
       })
       return
     }
@@ -219,6 +214,8 @@ export class ConfigParser {
       }
 
       if (zone.versions) {
+        versionsCount += zone.versions.length
+
         zone.versions.forEach((version) => {
           if (!version.no) {
             errorsBag.push({
@@ -236,6 +233,13 @@ export class ConfigParser {
         })
       }
     })
+
+    if (versionsCount === 0) {
+      errorsBag.push({
+        message: 'Define atleast one version to process documentation',
+        ruleId: 'missing-zones-and-versions',
+      })
+    }
   }
 
   /**

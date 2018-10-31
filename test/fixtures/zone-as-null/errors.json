@@ -2,5 +2,9 @@
   {
     "message": "Make sure to define slug for all zones",
     "ruleId": "missing-zone-slug"
+  },
+  {
+    "message": "Define atleast one version to process documentation",
+    "ruleId": "missing-zones-and-versions"
   }
 ]

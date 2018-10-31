@@ -21,6 +21,7 @@ const fixtures = [
   'zones-drop-extra-props',
   'zone-define-name',
   'zone-as-array',
+  'version-as-array',
 ]
 
 export default fixtures.map((fixture) => {

@@ -11,7 +11,7 @@ import { join, extname } from 'path'
 import { outputJson, remove } from 'fs-extra'
 import ow from 'ow'
 
-import { IDocNode, IConfigVersion } from '../Contracts'
+import { IDocNode, IConfigVersion, IConfigZone } from '../Contracts'
 import { Context } from '../Context'
 import debug from '../../utils/debug'
 
@@ -38,7 +38,7 @@ export class Version {
     public no: string,
     public docsPath: string,
     private _ctx: Context,
-    public zone: string,
+    public zone: Pick<IConfigZone, 'name' | 'slug'>,
     public name?: string,
   ) {
     debug('new version %s', this.uid)
@@ -49,7 +49,7 @@ export class Version {
    * Unique id for the version. Generated using `zone/versionNo`.
    */
   public get uid () {
-    return `${this.zone}/${this.no}`
+    return `${this.zone.slug}/${this.no}`
   }
 
   /**

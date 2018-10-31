@@ -192,6 +192,7 @@ test.group('Datastore', (group) => {
       themeOptions: {},
       zones: {
         guides: {
+          slug: 'guides',
           name: 'guides',
           versions: [{ no: '1.0.0', name: '1.0.0', docs: {}, location: 'docs/master' }],
         },
@@ -222,6 +223,7 @@ test.group('Datastore', (group) => {
       themeOptions: {},
       zones: {
         guides: {
+          slug: 'guides',
           name: 'guides',
           versions: [{ no: '1.0.0', name: '1.0.0', docs: {}, location: 'docs/master' }],
         },

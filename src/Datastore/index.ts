@@ -102,7 +102,7 @@ export class Datastore {
      */
     zones.forEach((zone) => {
       zone.versions.forEach((version) => {
-        const versionInstance = new Version(version.no, version.location, this._ctx, zone.slug, version.name)
+        const versionInstance = new Version(version.no, version.location, this._ctx, zone, version.name)
         const existingVersion = this._trackedVersions.find((version) => version.uid === versionInstance.uid)
 
         if (existingVersion) {
@@ -173,8 +173,13 @@ export class Datastore {
     const zones = {}
 
     this._trackedVersions.forEach((version) => {
-      zones[version.zone] = zones[version.zone] || { name: version.zone, versions: [] }
-      zones[version.zone].versions.push(version.toJSON())
+      zones[version.zone.slug] = zones[version.zone.slug] || {
+        slug: version.zone.slug,
+        name: version.zone.name || version.zone.slug,
+        versions: [],
+      }
+
+      zones[version.zone.slug].versions.push(version.toJSON())
     })
 
     return Object.assign({}, this.metaData, { zones })

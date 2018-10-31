@@ -25,14 +25,14 @@ test.group('Version', (group) => {
   test('compute uid from no and zone', (assert) => {
     const ctx = new Context()
 
-    const version = new Version('1.0.0', 'docs/master', ctx, 'master')
+    const version = new Version('1.0.0', 'docs/master', ctx, { slug: 'master' })
     assert.equal(version.uid, 'master/1.0.0')
   })
 
   test('use version no as name when name is missing', (assert) => {
     const ctx = new Context()
 
-    const version = new Version('1.0.0', 'docs/master', ctx, 'master')
+    const version = new Version('1.0.0', 'docs/master', ctx, { slug: 'master' })
     assert.equal(version.name, '1.0.0')
   })
 
@@ -46,7 +46,7 @@ test.group('Version', (group) => {
       title: 'Hello foo',
     })
 
-    const version = new Version('1.0.0', 'docs/master', ctx, 'master')
+    const version = new Version('1.0.0', 'docs/master', ctx, { slug: 'master' })
 
     try {
       await version.saveDoc('foo.json', doc)
@@ -65,7 +65,7 @@ test.group('Version', (group) => {
       title: 'Hello foo',
     })
 
-    const version = new Version('1.0.0', 'docs/master', ctx, 'master')
+    const version = new Version('1.0.0', 'docs/master', ctx, { slug: 'master' })
     await version.saveDoc('foo.md', doc)
 
     const contents = await fs.readJson(join(BUILD_DIR, 'api', 'master/1.0.0', 'foo.json'))
@@ -83,7 +83,7 @@ test.group('Version', (group) => {
       title: 'Hello foo',
     })
 
-    const version = new Version('1.0.0', 'docs/master', ctx, 'master')
+    const version = new Version('1.0.0', 'docs/master', ctx, { slug: 'master' })
     await version.saveDoc('foo.md', doc)
 
     try {
@@ -103,7 +103,7 @@ test.group('Version', (group) => {
       title: 'Hello foo',
     })
 
-    const version = new Version('1.0.0', 'docs/master', ctx, 'master')
+    const version = new Version('1.0.0', 'docs/master', ctx, { slug: 'master' })
     await version.saveDoc('foo.md', doc)
     await version.saveDoc('foo.md', Object.assign(doc, { title: 'Hi foo' }))
 
@@ -119,7 +119,7 @@ test.group('Version', (group) => {
       title: 'Hello foo',
     })
 
-    const version = new Version('1.0.0', 'docs/master', ctx, 'master')
+    const version = new Version('1.0.0', 'docs/master', ctx, { slug: 'master' })
     await version.saveDoc('foo.md', doc)
     await version.clean()
 
@@ -138,7 +138,7 @@ test.group('Version', (group) => {
       title: 'Hello foo',
     })
 
-    const version = new Version('1.0.0', 'docs/master', ctx, 'master')
+    const version = new Version('1.0.0', 'docs/master', ctx, { slug: 'master' })
     await version.saveDoc('foo.md', doc)
     await version.removeDoc('foo.md')
 
@@ -153,7 +153,7 @@ test.group('Version', (group) => {
     const ctx = new Context()
     ctx.addPath('dest', join(BUILD_DIR, 'api'))
 
-    const version = new Version('1.0.0', 'docs/master', ctx, 'master')
+    const version = new Version('1.0.0', 'docs/master', ctx, { slug: 'master' })
     version.update({ name: 'Version master' })
 
     assert.equal(version.name, 'Version master')
@@ -163,7 +163,7 @@ test.group('Version', (group) => {
     const ctx = new Context()
     ctx.addPath('dest', join(BUILD_DIR, 'api'))
 
-    const version = new Version('1.0.0', 'docs/master', ctx, 'master')
+    const version = new Version('1.0.0', 'docs/master', ctx, { slug: 'master' })
     version.update({ location: 'docs/foo' })
 
     assert.equal(version.docsPath, 'docs/foo')
@@ -173,7 +173,7 @@ test.group('Version', (group) => {
     const ctx = new Context()
     ctx.addPath('dest', join(BUILD_DIR, 'api'))
 
-    const version = new Version('1.0.0', 'docs/master', ctx, 'master')
+    const version = new Version('1.0.0', 'docs/master', ctx, { slug: 'master' })
     await version.clean()
 
     const fn = () => version.update({ location: 'docs/foo' })
@@ -186,7 +186,7 @@ test.group('Version', (group) => {
     const ctx = new Context()
     ctx.addPath('dest', join(BUILD_DIR, 'api'))
 
-    const version = new Version('1.0.0', 'docs/master', ctx, 'master')
+    const version = new Version('1.0.0', 'docs/master', ctx, { slug: 'master' })
     await version.clean()
 
     try {
@@ -206,7 +206,7 @@ test.group('Version', (group) => {
     const ctx = new Context()
     ctx.addPath('dest', join(BUILD_DIR, 'api'))
 
-    const version = new Version('1.0.0', 'docs/master', ctx, 'master')
+    const version = new Version('1.0.0', 'docs/master', ctx, { slug: 'master' })
     await version.clean()
 
     try {
@@ -221,7 +221,7 @@ test.group('Version', (group) => {
     const ctx = new Context()
     ctx.addPath('dest', join(BUILD_DIR, 'api'))
 
-    const version = new Version('1.0.0', 'docs/master', ctx, 'master')
+    const version = new Version('1.0.0', 'docs/master', ctx, { slug: 'master' })
 
     assert.deepEqual(version.toJSON(), {
       no: '1.0.0',
@@ -235,7 +235,7 @@ test.group('Version', (group) => {
     const ctx = new Context()
     ctx.addPath('dest', join(BUILD_DIR, 'api'))
 
-    const version = new Version('1.0.0', 'docs/master', ctx, 'master')
+    const version = new Version('1.0.0', 'docs/master', ctx, { slug: 'master' })
     await version.saveDoc('foo.md', getDoc({ permalink: 'foo', title: 'Hello foo' }))
 
     assert.deepEqual(version.toJSON(), {

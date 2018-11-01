@@ -13,7 +13,7 @@ import { ConfigParser } from '../src/ConfigParser'
 import { Context } from '../src/Context'
 import fixtures from './fixtures'
 
-test.group('Datastore', () => {
+test.group('Config Parser', () => {
   fixtures.forEach((fixture) => {
     test(fixture.name, async (assert) => {
       const ctx = new Context()

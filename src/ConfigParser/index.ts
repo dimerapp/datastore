@@ -39,7 +39,7 @@ export class ConfigParser {
     const buildPath = this._ctx.getPath('appRoot')
 
     if (!buildPath) {
-      throw MissingAppRootPath.invoke()
+      throw MissingAppRootPath.invoke('config parser')
     }
 
     this._basePath = buildPath

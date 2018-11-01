@@ -20,8 +20,8 @@ export class ConfigNotFound extends Error {
 export class MissingAppRootPath extends Error {
   public ruleId: string
 
-  public static invoke () {
-    const error = new this('Make sure to define the appRoot path before instantiating config parser')
+  public static invoke (consumer) {
+    const error = new this(`Make sure to define the appRoot path before instantiating the ${consumer}`)
     error.ruleId = 'internal-error'
     return error
   }
@@ -53,6 +53,16 @@ export class FrozenVersion extends Error {
   public static invoke () {
     const error = new this('Cannot modify deleted version')
     error.ruleId = 'internal-error'
+    return error
+  }
+}
+
+export class MissingVersionDir extends Error {
+  public ruleId: string
+
+  public static invoke (location, versionNo) {
+    const error = new this(`Unable to find directory ${location} referenced by ${versionNo}`)
+    error.ruleId = 'missing-version-location'
     return error
   }
 }

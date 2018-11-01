@@ -246,41 +246,51 @@ export class ConfigParser {
    * Parse the config file and return the normalized config object or an array
    * of errors (if any)
    */
-  public async parse (): Promise<{ errors: IConfigError[], config: IProjectConfig }> {
+  public async parse (): Promise<{ errors: IConfigError[], config?: IProjectConfig }> {
     const errorsBag: IConfigError[] = []
-    const config = await this._readConfigFile()
 
-    /**
-     * Validates the top level keys to make sure they are present
-     * and not conflicting with each other
-     */
-    this._validateTopLevelKeys(config, errorsBag)
+    try {
+      const config = await this._readConfigFile()
 
-    /**
-     * Normalize all the zones to be an array
-     */
-    this._normalizeZones(config)
+      /**
+       * Validates the top level keys to make sure they are present
+       * and not conflicting with each other
+       */
+      this._validateTopLevelKeys(config, errorsBag)
 
-    /**
-     * Normalize all versions inside zones to be an array
-     */
-    this._normalizeVersions(config)
+      /**
+       * Normalize all the zones to be an array
+       */
+      this._normalizeZones(config)
 
-    /**
-     * Validate normalized zones and versions
-     */
-    this._validateZonesAndVersions(config, errorsBag)
+      /**
+       * Normalize all versions inside zones to be an array
+       */
+      this._normalizeVersions(config)
 
-    return {
-      errors: errorsBag,
-      config: {
-        domain: config.domain,
-        cname: config.cname,
-        theme: config.theme,
-        zones: config.zones,
-        compilerOptions: config.compilerOptions || {},
-        themeOptions: config.themeOptions || {},
-      },
+      /**
+       * Validate normalized zones and versions
+       */
+      this._validateZonesAndVersions(config, errorsBag)
+
+      return {
+        errors: errorsBag,
+        config: {
+          domain: config.domain,
+          cname: config.cname,
+          theme: config.theme,
+          zones: config.zones,
+          compilerOptions: config.compilerOptions || {},
+          themeOptions: config.themeOptions || {},
+        },
+      }
+    } catch (error) {
+      return {
+        errors: [{
+          message: error.message,
+          ruleId: error.ruleId || 'internal-error',
+        }],
+      }
     }
   }
 }

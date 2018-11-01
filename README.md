@@ -41,68 +41,100 @@ Making sure the state of the documentation is in right shape is the primary prio
 
 ## Usage
 
-Let's dive into the usage of this module. The module comes with a **write only API**.
+Processing docs using Dimer is a series of operations. Let's perform them one by one using this module.
 
+### Step1: Parsing User Config
 
 ```js
-const { ConfigParser, Datastore } = require('@dimerapp/datastore')
+const { ConfigParser } = require('@dimerapp/datastore')
 const { Context } = require('@dimerapp/context')
-const { join } = require('path')
 
 const ctx = new Context()
+ctx.addPath('appRoot', __dirname)
 
-// Build path is used by datastore to output JSON files
-context.addPath('build', join(__dirname, build))
-
-// Used by different modules to read source files
-context.addPath('appRoot', __dirname)
-```
-
-
-Next step is to parse the config file `dimer.json`. A project without this file is not a dimer project. 
-
-```js
 const parser = new ConfigParser(ctx)
+const { errors, config } = await parser.parse()
 
-const { errors, parsedConfig } = await parser.parse()
-
-// Initial config has errors
 if (errors.length) {
-  
-} else {
-  // Continue
+    errors.map((error) => console.log(error.message))
+    return
 }
 ```
 
 
-Next step is to pass the parsed config file to the datastore, so that it can parse and store all zones and versions.
+1. The config parser will return an array of errors, which contains the `error.message` and `error.ruleId`.
+2. If there aren't any errors, then `config` object will be a normalised object with parsed config.
+
+### Step2: Sync zones and versions with datastore
 
 ```js
+const { Datastore, Config } = require('@dimerapp/datastore')
+const { Context } = require('@dimerapp/context')
+const { join } = require('path')
+
+const ctx = new Context()
+ctx.addPath('appRoot', __dirname)
+ctx.addPath('build', join(__dirname, 'dist'))
+
+const parser = new ConfigParser(ctx)
+const { errors, config } = await parser.parse()
+
+if (errors.length) {
+    errors.map((error) => console.log(error.message))
+    return
+}
+
+const db = new Datastore(ctx)
+const diff = db.syncConfig(config)
+
+const versions = diff.added.concat(diff.updated)
+```
+
+1. The `syncConfig` method takes the parsed config and syncs it with the flat file database. The data is not written to the disk, unless we call `db.commit`.
+2. The `diff` returned from the `syncConfig` method returns an array of versions for `added`, `updated` and `removed` keys.
+3. We just want to process the `added` and `updated` versions and delete the content for the `removed` versions (in next step).
+
+### Step3: Reading markdown files and processing them
+
+```js
+const { Datastore, Config, Reader, ConfigParser } = require('@dimerapp/datastore')
+const { Context } = require('@dimerapp/context')
+const { join } = require('path')
+
+const ctx = new Context()
+ctx.addPath('appRoot', __dirname)
+ctx.addPath('build', join(__dirname, 'dist'))
+
+const parser = new ConfigParser(ctx)
+const { errors, config } = await parser.parse()
+
+if (errors.length) {
+    errors.map((error) => console.log(error.message))
+    return
+}
+
 const db = new Datastore(ctx)
 
-// Returns the versions diff
-const diff = db.syncConfig(parseConfig)
-```
-
-The versions diff is the an object with all the details to find which `versions` have been changed, added or removed since the last `sync`. This is useful when you have a file watcher watching the files.
-
-The initial diff will always have everything under `added` array.
-
-```js
+const diff = db.syncConfig(config)
 const versions = diff.added.concat(diff.updated)
 
-// Remove version docs from the disk
-Promise.all(diff.removed.map((version) => {
-  return version.cleanup()
+async function processVersion (version) {
+  const reader = new Reader(ctx, version)
+
+  try {
+    const tree = await reader.getTree()
+    // an array of markdown files
+    
+  } catch (error) {
+    // Something blowed up
+  }
+}
+
+// we can safely process versions in parallel
+await Promise.all(versions.map((version) => {
+  return processVersion(version)
 }))
 ```
-
-Calling `db.commit` anytime will write the `meta.json` file to the disk.
-
-```js
-await db.commit()
-```
-
 
 ## Change log
 

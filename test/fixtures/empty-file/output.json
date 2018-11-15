@@ -1,5 +1,6 @@
 {
-  "zones": [{"slug":"default", "name": "default" ,"versions":[]}],
   "compilerOptions": {},
-  "themeOptions": {}
+  "themeOptions": {},
+  "translations": {},
+  "zones": []
 }

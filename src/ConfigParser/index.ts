@@ -10,7 +10,7 @@
 import { join } from 'path'
 import { readJson } from 'fs-extra'
 
-import { IProjectConfig, IConfigError } from '../Contracts'
+import { IProjectConfig, IConfigError, IConfigZone, IConfigVersion } from '../Contracts'
 import { Context } from '../Context'
 import { MissingPath, FileNotFound } from '../Exceptions'
 import debug from '../../utils/debug'
@@ -27,6 +27,8 @@ import debug from '../../utils/debug'
  */
 export class ConfigParser {
   private _basePath: string = ''
+  private _errors: IConfigError[] = []
+
   constructor (private _ctx: Context) {
     this._setBasePath()
   }
@@ -65,9 +67,9 @@ export class ConfigParser {
    * This method makes sure that versions or zones exists and they
    * don't exists together as top level nodes.
    */
-  private _validateTopLevelKeys (config, errorsBag: IConfigError[]) {
-    if (config.versions && config.zones) {
-      errorsBag.push({
+  private _validateTopLevelKeys (zones, versions) {
+    if (versions && zones) {
+      this._errors.push({
         message: 'Versions must be nested inside zones',
         ruleId: 'top-level-zones-and-versions',
       })
@@ -90,52 +92,68 @@ export class ConfigParser {
    * 3. If `zone` is an object, then it's `name`, `slug`, and `versions` will be used.
    */
   private _normalizeZone (zone, slug) {
-    if (!zone) {
-      return {}
+    /**
+     * When defined as a string, then we consider it as a location
+     * for the master version
+     */
+    if (zone && typeof (zone) === 'string') {
+      return {
+        slug: slug,
+        name: slug,
+        versions: { master: zone },
+      }
     }
 
-    return typeof (zone) === 'string' ? {
+    /**
+     * When it's an object, then we consider it as
+     * a proper zone object and pick fields from
+     * it.
+     */
+    if (this._isObject(zone)) {
+      return {
+        slug: zone.slug || slug,
+        name: zone.name || zone.slug || slug,
+        versions: zone.versions || {},
+      }
+    }
+
+    /**
+     * Fallback to empty object
+     */
+    return {
       slug: slug,
       name: slug,
-      versions: { master: zone },
-    } : {
-      slug: zone.slug || slug,
-      name: zone.name || zone.slug || slug,
-      versions: zone.versions || {},
+      versions: {},
     }
   }
 
   /**
    * Normalizes an array of zones from the config file
    */
-  private _normalizeZones (config) {
+  private _normalizeZones (zones, versions) {
     /**
      * Create the default zone when it's missing as top level node
      */
-    if (!config.zones) {
-      config.zones = {
-        default: {
-          versions: config.versions || {},
-        },
-      }
+    if (!zones) {
+      return versions ? [{
+        name: 'default',
+        slug: 'default',
+        versions: versions || {},
+      }] : []
     }
 
     /**
      * If zones is not a valid object literal, then subsitute it with an
      * empty array
      */
-    if (!this._isObject(config.zones)) {
-      config.zones = []
-      return
+    if (!this._isObject(zones)) {
+      return []
     }
 
     /**
      * Normalize zones and set it back as normalized array
      */
-    config.zones = Object.keys(config.zones).map((slug) => {
-      const zone = config.zones[slug]
-      return this._normalizeZone(zone, slug)
-    })
+    return Object.keys(zones).map((slug) => this._normalizeZone(zones[slug], slug))
   }
 
   /**
@@ -146,6 +164,10 @@ export class ConfigParser {
    * 3. Otherwise ignored and empty object is returned.
    */
   private _normalizeVersion (versionNo, versionNode) {
+    /**
+     * If version is a string, then it will be considered as
+     * the location of the version
+     */
     if (typeof (versionNode) === 'string') {
       return {
         no: versionNo,
@@ -156,6 +178,9 @@ export class ConfigParser {
       }
     }
 
+    /**
+     * If is object, then use object properties
+     */
     if (this._isObject(versionNode)) {
       return {
         draft: !!versionNode.draft,
@@ -166,6 +191,9 @@ export class ConfigParser {
       }
     }
 
+    /**
+     * Fallback to empty object
+     */
     return {}
   }
 
@@ -173,20 +201,13 @@ export class ConfigParser {
    * Normalizes all versions inside all the zones and mutates
    * them in place
    */
-  private _normalizeVersions (config) {
-    config.zones.forEach((zone) => {
-      if (!zone.slug) {
-        return
-      }
+  private _normalizeVersions (versions): IConfigVersion[] {
+    if (!this._isObject(versions)) {
+      return []
+    }
 
-      if (!this._isObject(zone.versions)) {
-        zone.versions = []
-        return
-      }
-
-      zone.versions = Object.keys(zone.versions).map((versionNo) => {
-        return this._normalizeVersion(versionNo, zone.versions[versionNo])
-      })
+    return Object.keys(versions).map((versionNo) => {
+      return this._normalizeVersion(versionNo, versions[versionNo]) as IConfigVersion
     })
   }
 
@@ -194,52 +215,44 @@ export class ConfigParser {
    * Validates all zones and their versions to make sure, we have
    * enough info to process docs.
    */
-  private _validateZonesAndVersions (config, errorsBag) {
-    let versionsCount = 0
-
-    if (!config.zones.length) {
-      errorsBag.push({
+  private _validateZones (zones) {
+    if (!zones.length) {
+      this._errors.push({
         message: 'Define atleast one version to process documentation',
         ruleId: 'missing-zones-and-versions',
       })
       return
     }
 
-    config.zones.forEach((zone) => {
+    zones.forEach((zone) => {
       if (!zone.slug) {
-        errorsBag.push({
+        this._errors.push({
           message: 'Make sure to define slug for all zones',
           ruleId: 'missing-zone-slug',
         })
       }
+    })
+  }
 
-      if (zone.versions) {
-        versionsCount += zone.versions.length
+  /**
+   * Validate all versions inside all zones.
+   */
+  private _validateVersions (versions) {
+    versions.forEach((version) => {
+      if (!version.no) {
+        this._errors.push({
+          message: 'Each version must have a version number',
+          ruleId: 'missing-version-no',
+        })
+      }
 
-        zone.versions.forEach((version) => {
-          if (!version.no) {
-            errorsBag.push({
-              message: 'Each version must have a version number',
-              ruleId: 'missing-version-no',
-            })
-          }
-
-          if (!version.location) {
-            errorsBag.push({
-              message: 'Each version must specify the docs location',
-              ruleId: 'missing-version-location',
-            })
-          }
+      if (!version.location) {
+        this._errors.push({
+          message: 'Each version must specify the docs location',
+          ruleId: 'missing-version-location',
         })
       }
     })
-
-    if (versionsCount === 0) {
-      errorsBag.push({
-        message: 'Define atleast one version to process documentation',
-        ruleId: 'missing-zones-and-versions',
-      })
-    }
   }
 
   private async _readTranslation (locale, translations) {
@@ -256,14 +269,51 @@ export class ConfigParser {
     return {}
   }
 
-  private async _normalizeTranslations (config) {
-    if (!config.translations || !this._isObject(config.translations)) {
-      return
+  /**
+   * Normalize the translations object and inline translations if they
+   * are defined as strings
+   */
+  private async _normalizeTranslations (translations): Promise<{ [key: string]: any }> {
+    if (!translations || !this._isObject(translations)) {
+      return {}
     }
 
-    await Promise.all(Object.keys(config.translations).map(async (locale) => {
-      config.translations[locale] = await this._readTranslation(locale, config.translations[locale])
+    const normalized = {}
+
+    /**
+     * Normalize all translations. Some can be reference to the a file, so read
+     * the file as JSON too
+     */
+    await Promise.all(Object.keys(translations).map(async (locale) => {
+      try {
+        normalized[locale] = await this._readTranslation(locale, translations[locale])
+      } catch (error) {
+        this._errors.push({
+          message: error.message,
+          ruleId: error.ruleId || 'internal-error',
+        })
+      }
     }))
+
+    return normalized
+  }
+
+  /**
+   * Reads the config file from the disk. This method will catch exceptions
+   * and adds them to the `errors` array.
+   */
+  private async _readConfigFile (): Promise<IProjectConfig | null> {
+    try {
+      return await this._readFileAsJSON('dimer.json', () => {
+        throw FileNotFound.missingConfigFile()
+      })
+    } catch (error) {
+      this._errors.push({
+        message: error.message,
+        ruleId: error.ruleId || 'internal-error',
+      })
+      return null
+    }
   }
 
   /**
@@ -271,58 +321,55 @@ export class ConfigParser {
    * of errors (if any)
    */
   public async parse (): Promise<{ errors: IConfigError[], config?: IProjectConfig }> {
-    const errorsBag: IConfigError[] = []
-
-    try {
-      const config = await this._readFileAsJSON('dimer.json', () => {
-        throw FileNotFound.missingConfigFile()
-      })
-
-      /**
-       * Validates the top level keys to make sure they are present
-       * and not conflicting with each other
-       */
-      this._validateTopLevelKeys(config, errorsBag)
-
-      /**
-       * Normalize all the zones to be an array
-       */
-      this._normalizeZones(config)
-
-      /**
-       * Normalize all versions inside zones to be an array
-       */
-      this._normalizeVersions(config)
-
-      /**
-       * Normalize translations
-       */
-      await this._normalizeTranslations(config)
-
-      /**
-       * Validate normalized zones and versions
-       */
-      this._validateZonesAndVersions(config, errorsBag)
-
+    const config = await this._readConfigFile()
+    if (!config) {
       return {
-        errors: errorsBag,
-        config: {
-          domain: config.domain,
-          cname: config.cname,
-          theme: config.theme,
-          zones: config.zones,
-          translations: config.translations,
-          compilerOptions: config.compilerOptions || {},
-          themeOptions: config.themeOptions || {},
-        },
+        errors: this._errors,
       }
-    } catch (error) {
+    }
+
+    /**
+     * Validates the top level keys to make sure they are present
+     * and not conflicting with each other. In case of errors
+     * return them right away
+     */
+    this._validateTopLevelKeys(config.zones, (config as any).versions)
+    if (this._errors.length) {
       return {
-        errors: [{
-          message: error.message,
-          ruleId: error.ruleId || 'internal-error',
-        }],
+        errors: this._errors,
       }
+    }
+
+    /**
+     * Normalize all the zones to be an array and nest versions inside
+     * them, if they are outside
+     */
+    const zones = this._normalizeZones(config.zones, (config as any).versions) as IConfigZone[]
+    zones.forEach((zone) => {
+      zone.versions = this._normalizeVersions(zone.versions)
+    })
+
+    const translations = await this._normalizeTranslations(config.translations)
+
+    /**
+     * Validate normalized zones and versions
+     */
+    this._validateZones(zones)
+    zones.forEach((zone) => {
+      this._validateVersions(zone.versions)
+    })
+
+    return {
+      errors: this._errors,
+      config: {
+        domain: config.domain,
+        cname: config.cname,
+        theme: config.theme,
+        zones: zones,
+        translations: translations,
+        compilerOptions: config.compilerOptions || {},
+        themeOptions: config.themeOptions || {},
+      },
     }
   }
 }

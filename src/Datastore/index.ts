@@ -77,6 +77,7 @@ export class Datastore {
       domain: config.domain,
       cname: config.cname,
       theme: config.theme,
+      translations: config.translations,
       themeOptions: config.themeOptions,
       compilerOptions: config.compilerOptions,
     }

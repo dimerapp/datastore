@@ -38,6 +38,7 @@ test.group('Datastore', (group) => {
       domain: 'foo.dimerapp.com',
       cname: undefined,
       theme: undefined,
+      translations: undefined,
       compilerOptions: {},
       themeOptions: {},
     })
@@ -189,6 +190,7 @@ test.group('Datastore', (group) => {
       domain: 'foo.dimerapp.com',
       compilerOptions: {},
       theme: undefined,
+      translations: undefined,
       themeOptions: {},
       zones: {
         guides: {

@@ -51,3 +51,12 @@ export type IConfigError = {
   message: string,
   ruleId: string,
 }
+
+export type IVersionJSON = {
+  no: string,
+  name: string,
+  location: string,
+  docs: { [jsonPath: string]: Partial<IDocNode> },
+}
+
+export type IStatsNode = { absPath: string, relativePath: string }

@@ -14,8 +14,7 @@ import { exists } from 'fs-extra'
 import { MissingPath } from '../Exceptions'
 import { Context } from '../Context'
 import { Version } from '../Version'
-
-type IStatsNode = { absPath: string, relativePath: string }
+import { IStatsNode } from '../Contracts'
 
 /**
  * The Reader class is responsible for collecting all markdown

@@ -11,22 +11,11 @@ import { join, extname } from 'path'
 import { outputJson, remove } from 'fs-extra'
 import ow from 'ow'
 
-import { IDocNode, IConfigVersion, IConfigZone } from '../Contracts'
+import { IDocNode, IConfigVersion, IConfigZone, IVersionJSON } from '../Contracts'
 import { Context } from '../Context'
 import { MissingPath, DuplicatePermalink, FrozenVersion, DuplicateSource } from '../Exceptions'
 
 import debug from '../../utils/debug'
-
-/**
- * This type is returned when `toJSON` is called to the
- * version
- */
-type IVersionJSON = {
-  no: string,
-  name: string,
-  location: string,
-  docs: { [jsonPath: string]: Partial<IDocNode> },
-}
 
 /**
  * Version class manages the lifecycle of docs for a given version. It allows

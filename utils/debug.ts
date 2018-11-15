@@ -8,4 +8,4 @@
 */
 
 import Debug from 'debug'
-export default Debug('datastore')
+export default Debug('dimer:datastore')

@@ -47,6 +47,16 @@ export class DuplicatePermalink extends Error {
   }
 }
 
+export class DuplicateSource extends Error {
+  public ruleId: string
+
+  public static invoke (oldSrc, newSrc) {
+    const error = new this(`${newSrc} and ${oldSrc} are potentially same`)
+    error.ruleId = 'duplicate-src-path'
+    return error
+  }
+}
+
 export class FrozenVersion extends Error {
   public ruleId: string
 

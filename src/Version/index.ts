@@ -13,7 +13,7 @@ import ow from 'ow'
 
 import { IDocNode, IConfigVersion, IConfigZone } from '../Contracts'
 import { Context } from '../Context'
-import { MissingDestPath, DuplicatePermalink, FrozenVersion } from '../Exceptions'
+import { MissingDestPath, DuplicatePermalink, FrozenVersion, DuplicateSource } from '../Exceptions'
 
 import debug from '../../utils/debug'
 
@@ -82,6 +82,26 @@ export class Version {
   }
 
   /**
+   * Scans the existing doc, where the `srcPath` are different. However the
+   * jsonPath yields to same. Which means the src has different extension
+   * and will override the destination.
+   */
+  private _scanForOverrides (srcPath: string, jsonPath: string) {
+    const duplicateSrcPath = Object.keys(this.docs).find((docPath) => {
+      return docPath === jsonPath && this.docs[docPath].srcPath !== srcPath
+    })
+
+    if (!duplicateSrcPath) {
+      return
+    }
+
+    throw DuplicateSource.invoke(
+      join(this.docsPath, this.docs[duplicateSrcPath].srcPath!),
+      join(this.docsPath, srcPath),
+    )
+  }
+
+  /**
    * Makes the json path for a given doc
    */
   private _makeJsonPath (filePath: string): string {
@@ -138,6 +158,12 @@ export class Version {
      */
     this._ensureIsntFrozen()
     const jsonPath = this._makeJsonPath(filePath)
+
+    /**
+     * Scan for source files which will override each other, since
+     * the src extension is different
+     */
+    this._scanForOverrides(filePath, jsonPath)
 
     /**
      * Raises error when permalink is used by any other doc. This also means that all

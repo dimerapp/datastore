@@ -265,7 +265,10 @@ test.group('Version', (group) => {
     try {
       await version.saveDoc('foo.mkd', getDoc({ permalink: 'bar', title: 'Hello bar' }))
     } catch ({ message, ruleId }) {
-      assert.equal(message, 'docs/master/foo.mkd and docs/master/foo.md are potentially same')
+      assert.equal(
+        message,
+        `${normalize('docs/master/foo.mkd')} and ${normalize('docs/master/foo.md')} are potentially same`,
+      )
       assert.equal(ruleId, 'duplicate-src-path')
     }
   })

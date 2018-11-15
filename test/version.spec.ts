@@ -69,7 +69,7 @@ test.group('Version', (group) => {
     await version.saveDoc('foo.md', doc)
 
     const contents = await fs.readJson(join(BUILD_DIR, 'api', 'master/1.0.0', 'foo.json'))
-    assert.deepEqual(contents, doc.content)
+    assert.deepEqual(contents, doc.contents)
   })
 
   test('raise error when permalink is used by another doc', async (assert) => {

@@ -34,7 +34,7 @@ export function getVersion (version): IConfigVersion {
 
 export function getDoc (doc): IDocNode {
   return Object.assign({
-    content: {
+    contents: {
       type: 'root',
       children: [],
     },

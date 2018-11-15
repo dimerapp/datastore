@@ -140,7 +140,7 @@ export class Version {
   public async saveDoc (filePath: string, doc: IDocNode): Promise<Error | void> {
     ow(doc.permalink, ow.string.label('doc.permalink').nonEmpty)
     ow(doc.title, ow.string.label('doc.title').nonEmpty)
-    ow(doc.content, ow.object.label('doc.title').hasKeys('type', 'children'))
+    ow(doc.contents, ow.object.label('doc.title').hasKeys('type', 'children'))
 
     /**
      * Ensure version isn't frozen already
@@ -173,7 +173,7 @@ export class Version {
     }
 
     debug('saving doc %s', jsonPath)
-    await outputJson(jsonPath, doc.content)
+    await outputJson(jsonPath, doc.contents)
   }
 
   /**

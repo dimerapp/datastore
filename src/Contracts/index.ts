@@ -59,4 +59,27 @@ export type IVersionJSON = {
   docs: { [jsonPath: string]: Partial<IDocNode> },
 }
 
-export type IStatsNode = { absPath: string, relativePath: string }
+export type IFileErrorMessage = {
+  line: null | number,
+  column: null | number,
+  fatal: boolean,
+  file: string,
+  location: any,
+  message: string,
+  name: string,
+  reason: string,
+  ruleId: string,
+  source: null | number,
+  relativeSource: string,
+}
+
+export type IStatsNode = {
+  absPath: string,
+  relativePath: string,
+}
+
+export type IMarkdownOptions = {
+  skipToc?: boolean,
+  title?: string,
+  onUrl?: (relativePath: string, file: any) => any,
+}

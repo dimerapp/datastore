@@ -38,7 +38,7 @@ test.group('Datastore', (group) => {
       domain: 'foo.dimerapp.com',
       cname: undefined,
       theme: undefined,
-      translations: undefined,
+      translations: {},
       compilerOptions: {},
       themeOptions: {},
     })
@@ -190,7 +190,7 @@ test.group('Datastore', (group) => {
       domain: 'foo.dimerapp.com',
       compilerOptions: {},
       theme: undefined,
-      translations: undefined,
+      translations: {},
       themeOptions: {},
       zones: {
         guides: {
@@ -222,6 +222,7 @@ test.group('Datastore', (group) => {
     assert.deepEqual(contents, {
       domain: 'foo.dimerapp.com',
       compilerOptions: {},
+      translations: {},
       themeOptions: {},
       zones: {
         guides: {

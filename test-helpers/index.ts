@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
 */
 
-import { IConfigZone, IConfigVersion, IProjectConfig, IDocNode } from '../src/Contracts'
+import { IConfigZone, IConfigVersion, IProjectConfig, IDocNode, IMarkdownOptions } from '../src/Contracts'
 
 export function getZone (zone): IConfigZone {
   return Object.assign({ slug: 'guides' }, zone)
@@ -17,6 +17,7 @@ export function getBaseConfig (config): IProjectConfig {
   return Object.assign({
     compilerOptions: {},
     themeOptions: {},
+    translations: {},
     zones: [],
   }, config)
 }
@@ -39,4 +40,8 @@ export function getDoc (doc): IDocNode {
     },
     toc: true,
   }, doc)
+}
+
+export function getBaseMarkdownOptions (options): IMarkdownOptions {
+  return Object.assign({}, options)
 }

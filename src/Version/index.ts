@@ -13,7 +13,7 @@ import ow from 'ow'
 
 import { IDocNode, IConfigVersion, IConfigZone } from '../Contracts'
 import { Context } from '../Context'
-import { MissingDestPath, DuplicatePermalink, FrozenVersion, DuplicateSource } from '../Exceptions'
+import { MissingPath, DuplicatePermalink, FrozenVersion, DuplicateSource } from '../Exceptions'
 
 import debug from '../../utils/debug'
 
@@ -60,7 +60,7 @@ export class Version {
   private _getBasePath () {
     const dest = this._ctx.getPath('dest')
     if (!dest) {
-      throw MissingDestPath.invoke()
+      throw MissingPath.dest()
     }
 
     return join(dest, this.uid)

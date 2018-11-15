@@ -51,7 +51,7 @@ test.group('Version', (group) => {
     try {
       await version.saveDoc('foo.json', doc)
     } catch ({ message, ruleId }) {
-      assert.equal(message, 'Cannot save docs, without defining the dest path inside context')
+      assert.equal(message, 'Cannot persist datastore without the dest path inside context')
       assert.equal(ruleId, 'internal-error')
     }
   })

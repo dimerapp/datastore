@@ -22,7 +22,10 @@ test.group('Config Parser', () => {
 
       const { errors, config } = await parser.parse()
       assert.deepEqual(JSON.parse(JSON.stringify(errors)), fixture.errors)
-      assert.deepEqual(JSON.parse(JSON.stringify(config)), fixture.output)
+
+      if (config) {
+        assert.deepEqual(JSON.parse(JSON.stringify(config)), fixture.output)
+      }
     })
   })
 })

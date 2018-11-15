@@ -12,7 +12,7 @@ import { readJson } from 'fs-extra'
 
 import { IProjectConfig, IConfigError } from '../Contracts'
 import { Context } from '../Context'
-import { MissingAppRootPath, ConfigNotFound } from '../Exceptions'
+import { MissingPath, FileNotFound } from '../Exceptions'
 import debug from '../../utils/debug'
 
 /**
@@ -36,13 +36,13 @@ export class ConfigParser {
    * raises error if app root path is missing
    */
   private _setBasePath () {
-    const buildPath = this._ctx.getPath('appRoot')
+    const appRoot = this._ctx.getPath('appRoot')
 
-    if (!buildPath) {
-      throw MissingAppRootPath.invoke('config parser')
+    if (!appRoot) {
+      throw MissingPath.appRoot('config parser')
     }
 
-    this._basePath = buildPath
+    this._basePath = appRoot
     debug('app root %s', this._basePath)
   }
 
@@ -50,12 +50,12 @@ export class ConfigParser {
    * Reads the config file and raises error when file is missing or has
    * syntax errors.
    */
-  private async _readConfigFile () {
+  private async _readFileAsJSON (relativePath: string, missingFileFn: Function) {
     try {
-      return await readJson(join(this._ctx.getPath('appRoot')!, 'dimer.json'))
+      return await readJson(join(this._ctx.getPath('appRoot')!, relativePath))
     } catch (err) {
       if (err.code === 'ENOENT') {
-        throw ConfigNotFound.invoke()
+        missingFileFn()
       }
       throw err
     }
@@ -242,6 +242,30 @@ export class ConfigParser {
     }
   }
 
+  private async _readTranslation (locale, translations) {
+    if (this._isObject(translations)) {
+      return translations
+    }
+
+    if (typeof (translations) === 'string') {
+      return await this._readFileAsJSON(translations, () => {
+        throw FileNotFound.translationNotFound(locale, translations)
+      })
+    }
+
+    return {}
+  }
+
+  private async _normalizeTranslations (config) {
+    if (!config.translations || !this._isObject(config.translations)) {
+      return
+    }
+
+    await Promise.all(Object.keys(config.translations).map(async (locale) => {
+      config.translations[locale] = await this._readTranslation(locale, config.translations[locale])
+    }))
+  }
+
   /**
    * Parse the config file and return the normalized config object or an array
    * of errors (if any)
@@ -250,7 +274,9 @@ export class ConfigParser {
     const errorsBag: IConfigError[] = []
 
     try {
-      const config = await this._readConfigFile()
+      const config = await this._readFileAsJSON('dimer.json', () => {
+        throw FileNotFound.missingConfigFile()
+      })
 
       /**
        * Validates the top level keys to make sure they are present
@@ -269,6 +295,11 @@ export class ConfigParser {
       this._normalizeVersions(config)
 
       /**
+       * Normalize translations
+       */
+      await this._normalizeTranslations(config)
+
+      /**
        * Validate normalized zones and versions
        */
       this._validateZonesAndVersions(config, errorsBag)
@@ -280,6 +311,7 @@ export class ConfigParser {
           cname: config.cname,
           theme: config.theme,
           zones: config.zones,
+          translations: config.translations,
           compilerOptions: config.compilerOptions || {},
           themeOptions: config.themeOptions || {},
         },

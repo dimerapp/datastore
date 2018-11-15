@@ -1,0 +1,15 @@
+{
+  "zones": {
+    "guides": {
+      "versions": {
+        "master": "docs/master"
+      }
+    }
+  },
+  "translations": {
+    "en-us": {
+      "title": "Hello world"
+    },
+    "fr": "fr.json"
+  }
+}

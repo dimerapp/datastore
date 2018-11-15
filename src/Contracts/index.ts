@@ -40,6 +40,9 @@ export type IProjectConfig = {
   cname?: string,
   theme?: string,
   zones: IConfigZone[],
+  translations: {
+    [key: string]: any,
+  },
   compilerOptions: any,
   themeOptions: any,
 }

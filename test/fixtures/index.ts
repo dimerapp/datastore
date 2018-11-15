@@ -23,6 +23,9 @@ const fixtures = [
   'zone-as-array',
   'version-as-array',
   'one-zone-with-no-versions',
+  'translations-inline',
+  'translations-external',
+  'translations-external-missing',
 ]
 
 export default fixtures.map((fixture) => {

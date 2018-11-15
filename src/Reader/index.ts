@@ -11,7 +11,7 @@ import * as klaw from 'klaw'
 import { join, extname, basename, sep } from 'path'
 import { exists } from 'fs-extra'
 
-import { MissingAppRootPath, MissingVersionDir } from '../Exceptions'
+import { MissingPath } from '../Exceptions'
 import { Context } from '../Context'
 import { Version } from '../Version'
 
@@ -42,7 +42,7 @@ export class Reader {
 
   constructor (private _ctx: Context, private _version: Version) {
     if (!this._ctx.getPath('appRoot')) {
-      throw MissingAppRootPath.invoke('reader')
+      throw MissingPath.appRoot('reader')
     }
 
     this._basePath = join(this._ctx.getPath('appRoot')!, this._version.docsPath)
@@ -77,7 +77,7 @@ export class Reader {
   private async _ensureVersionLocation () {
     const hasDir = await exists(this._basePath)
     if (!hasDir) {
-      throw MissingVersionDir.invoke(this._version.docsPath, this._version.no)
+      throw MissingPath.versionDir(this._version.docsPath, this._version.no)
     }
   }
 

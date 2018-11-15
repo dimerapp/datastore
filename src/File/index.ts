@@ -48,11 +48,11 @@ import { IMarkdownOptions, IFileErrorMessage } from '../Contracts'
  * ```
  */
 export class File {
-  private _vfile = vFile({ path: this._absPath, contents: '' })
+  private _vfile = vFile({ path: this.path, contents: '' })
   public enoent: boolean = false
   public metaData: any = {}
 
-  constructor (private _absPath: string, private _relativePath: string, private _options: IMarkdownOptions) {
+  constructor (public path: string, public relativePath: string, private _options: IMarkdownOptions) {
   }
 
   /**
@@ -68,7 +68,7 @@ export class File {
    * Returns the permalink by making it from the file name
    */
   private _makePermalink () {
-    return utils.permalink.generateFromFileName(basename(this._relativePath))
+    return utils.permalink.generateFromFileName(basename(this.relativePath))
   }
 
   /**
@@ -94,7 +94,7 @@ export class File {
    */
   private async _readFile (): Promise<string> {
     try {
-      return await fs.readFile(this._absPath, 'utf-8')
+      return await fs.readFile(this.path, 'utf-8')
     } catch (error) {
       this.enoent = true
       return ''
@@ -173,7 +173,7 @@ export class File {
    */
   public reportWarning (text: string, ruleId: string, fatal = false): this {
     const message = this._vfile.message(text, null, ruleId)
-    message.relativeSource = this._relativePath
+    message.relativeSource = this.relativePath
     message.fatal = fatal
 
     return this

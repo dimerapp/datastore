@@ -97,7 +97,7 @@ const versions = diff.added.concat(diff.updated)
 ### Step3: Reading markdown files and processing them
 
 ```js
-const { Datastore, Config, Reader, ConfigParser } = require('@dimerapp/datastore')
+const { Datastore, Config, Reader, ConfigParser, File } = require('@dimerapp/datastore')
 const { Context } = require('@dimerapp/context')
 const { join } = require('path')
 
@@ -118,12 +118,29 @@ const db = new Datastore(ctx)
 const diff = db.syncConfig(config)
 const versions = diff.added.concat(diff.updated)
 
+async function saveDoc (file, version) {
+  await file.parse()
+  if (file.errors.length) {
+    // do not save
+  }
+
+  await version.saveDoc(file.path, Object.assign(
+    {},
+    file.metaData,
+    { contents: file.contents }
+  ))
+}
+
 async function processVersion (version) {
   const reader = new Reader(ctx, version)
 
   try {
     const tree = await reader.getTree()
     // an array of markdown files
+    await Promise.all(tree.map((node) => {
+      const file = new File(node.absPath, node.relativePath, {})
+      return saveDoc(file, version)
+    }))
     
   } catch (error) {
     // Something blowed up

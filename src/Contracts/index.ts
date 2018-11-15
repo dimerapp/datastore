@@ -11,7 +11,7 @@ export type IDocNode = {
   permalink: string,
   title: string,
   toc: boolean,
-  content: any,
+  contents: any,
   srcPath?: string,
   category?: string,
   sidebarLabel?: string,

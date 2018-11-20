@@ -521,20 +521,22 @@ class Datastore {
   }
 
   /**
-   * Creates a search index for a given version
+   * Creates a search index for a given version. Optionally define the
+   * lunr language. Language must be one of the pre-defined languages.
    *
    * @method indexVersion
    *
    * @param  {String}     zoneSlug
    * @param  {String}     versionNo
+   * @param  {String}     language
    *
    * @return {void}
    */
-  async indexVersion (zoneSlug, versionNo) {
+  async indexVersion (zoneSlug, versionNo, languages) {
     ow(zoneSlug, ow.string.label('zoneSlug').nonEmpty)
     ow(versionNo, ow.string.label('versionNo').nonEmpty)
 
-    const index = new Index(this.paths.searchIndexFile(zoneSlug, versionNo))
+    const index = new Index(this.paths.searchIndexFile(zoneSlug, versionNo), languages)
 
     /**
      * Get the entire tree with the loaded content

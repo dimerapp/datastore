@@ -12,6 +12,64 @@ const fs = require('fs-extra')
 const toString = require('mdast-util-to-string')
 const lunr = require('lunr')
 const _ = require('lodash')
+const debug = require('debug')('dimer:index')
+
+/**
+ * Languages loaded, their is no need to load
+ * them again and again
+ */
+const loadedLanguages = []
+
+/**
+ * Supported languages. We check for languages here to
+ * avoid runtime `require` exceptions
+ */
+const whitelisted = [
+  'da',
+  'de',
+  'du',
+  'es',
+  'fi',
+  'fr',
+  'hu',
+  'it',
+  'ja',
+  'no',
+  'pt',
+  'ro',
+  'ru',
+  'sv',
+  'th',
+  'tr'
+]
+
+function loadLanguages (languages) {
+  if (!languages || !languages.length) {
+    return
+  }
+
+  /**
+   * Load basic multi-lingual stemmer and include it
+   * only once
+   */
+  if (this.loadedLanguages.length === 0) {
+    debug('loading stemmer')
+    require('lunr-languages/lunr.stemmer.support')(lunr)
+  }
+
+  languages = Array.isArray(languages) ? languages : [languages]
+  languages.forEach((language) => {
+    if (whitelisted.indexOf(language) === -1) {
+      return
+    }
+
+    if (loadedLanguages.indexOf(language) === -1) {
+      debug('loading language %s', language)
+      require(`lunr-languages/lunr.${language}`)(lunr)
+      loadedLanguages.push(language)
+    }
+  })
+}
 
 /**
  * Creates a search index for all the docs
@@ -21,11 +79,17 @@ const _ = require('lodash')
  * @param {String} indexPath
  */
 class Index {
-  constructor (indexPath) {
+  constructor (indexPath, languages) {
     this.indexPath = indexPath
     this.blackListedBlockTags = ['pre', 'html', 'image', 'imageReference', 'linkReference', 'th']
     this.blackListedClasses = ['dimer-highlight', 'toc-container']
     this.headings = ['h1', 'h2', 'h3', 'h4']
+    this.languages = languages
+
+    /**
+     * Load the languages upfront
+     */
+    loadLanguages(this.languages)
 
     /**
      * Each child of ul is seperated by a space
@@ -184,6 +248,15 @@ class Index {
     const self = this
 
     const index = lunr(function () {
+      if (Array.isArray(this.languages) && !lunr.multiLanguage) {
+        debug('using languages %o', this.languages)
+        require('lunr-languages/lunr.multi')(lunr)
+        this.use(lunr.multiLanguage(...this.languages))
+      } else if (typeof (this.languages === 'string') && this.languages) {
+        this.use(lunr[this.languages])
+        debug('using language %o', this.language)
+      }
+
       this.ref('url')
       this.field('content', { boost: 2 })
       this.metadataWhitelist = ['position']

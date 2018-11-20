@@ -300,6 +300,39 @@ Following will be the output of search results
 ]
 ```
 
+### Search languages
+The datastore has support for multiple languages to create the search index. Following
+is the list of allowed and supported languages.
+
+English `en` is the default language.
+
+- da (Danish)
+- de (German)
+- du (Dutch)
+- es (Spanish)
+- fi (Finnish)
+- fr (French)
+- hu (Hungarian)
+- it (Italian)
+- ja (Japanese)
+- no (Norwegian)
+- pt (Portuguese)
+- ro (Romanian)
+- ru (Russian)
+- sv (Swedish)
+- th (Thai)
+- tr (Turkish)
+
+```js
+await store.indexVersion('guides', 'v4.0', 'de')
+```
+
+If your content is written in the mix of multiple languages, then you can pass an array of languages instead.
+
+```js
+await store.indexVersion('guides', 'v4.0', ['de', 'en'])
+```
+
 ## Change log
 
 The change log can be found in the [CHANGELOG.md](https://github.com/dimerapp/md-serve/CHANGELOG.md) file.

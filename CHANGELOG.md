@@ -1,3 +1,13 @@
+<a name="3.0.2"></a>
+## [3.0.2](https://github.com/dimerapp/datastore/compare/v3.0.1...v3.0.2) (2018-11-20)
+
+
+### Features
+
+* **search:** add support for multiple languages ([0b25bf1](https://github.com/dimerapp/datastore/commit/0b25bf1))
+
+
+
 <a name="3.0.1"></a>
 ## [3.0.1](https://github.com/dimerapp/datastore/compare/v3.0.0...v3.0.1) (2018-09-05)
 

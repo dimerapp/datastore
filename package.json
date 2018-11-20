@@ -1,6 +1,6 @@
 {
   "name": "@dimerapp/datastore",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "Datastore to store dimer websites as JSON",
   "main": "src/Datastore.js",
   "files": [
@@ -8,10 +8,9 @@
   ],
   "scripts": {
     "pretest": "npm run lint",
-    "test": "japa",
+    "test": "node japaFile.js",
     "mrm": "mrm --preset=@adonisjs/mrm-preset",
     "commit": "git-cz",
-    "test:win": "node ./node_modules/japa-cli/index.js",
     "lint": "standard"
   },
   "keywords": [],
@@ -19,24 +18,26 @@
   "license": "MIT",
   "dependencies": {
     "@dimerapp/utils": "^2.0.1",
-    "fs-extra": "^7.0.0",
-    "lodash": "^4.17.10",
-    "lunr": "^2.3.3",
+    "debug": "^4.1.0",
+    "fs-extra": "^7.0.1",
+    "lodash": "^4.17.11",
+    "lunr": "^2.3.5",
+    "lunr-languages": "^1.0.0",
     "mdast-util-to-string": "^1.0.5",
-    "ow": "^0.6.0",
+    "ow": "^0.8.0",
     "steno": "^0.4.4"
   },
   "devDependencies": {
-    "@adonisjs/mrm-preset": "^1.0.11",
+    "@adonisjs/mrm-preset": "^1.0.14",
     "@dimerapp/context": "^2.0.0",
-    "@dimerapp/markdown": "^3.1.1",
-    "commitizen": "^2.10.1",
+    "@dimerapp/markdown": "^3.2.0",
+    "commitizen": "^3.0.4",
     "cz-conventional-changelog": "^2.1.0",
     "dedent": "^0.7.0",
-    "japa": "^1.0.6",
+    "japa": "^2.0.6",
     "japa-cli": "^1.0.1",
     "mrm": "^1.2.1",
-    "pkg-ok": "^2.2.0",
+    "pkg-ok": "^2.3.1",
     "standard": "^12.0.1"
   },
   "config": {

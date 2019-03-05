@@ -49,16 +49,16 @@ test.group('Search', (group) => {
     await index.save()
 
     const output = await search.search(indexFile, 'different')
-    assert.equal(output[0].ref, '/hello#this-is-section-3')
 
-    assert.deepEqual(output[0].marks.title, [
+    assert.equal(output[0].url, '/hello#this-is-section-3')
+    assert.deepEqual(output[0].title.marks, [
       {
         type: 'raw',
         text: 'This is section 3'
       }
     ])
 
-    assert.deepEqual(output[0].marks.body, [
+    assert.deepEqual(output[0].body[0].marks, [
       {
         type: 'raw',
         text: 'Some '
@@ -98,9 +98,9 @@ test.group('Search', (group) => {
     await index.save()
 
     const output = await search.search(indexFile, 'front matter')
-    assert.equal(output[0].ref, '/hello#yaml-front-matter')
+    assert.equal(output[0].url, '/hello#yaml-front-matter')
 
-    assert.deepEqual(output[0].marks.title, [
+    assert.deepEqual(output[0].title.marks, [
       {
         type: 'raw',
         text: 'Yaml '
@@ -119,7 +119,7 @@ test.group('Search', (group) => {
       }
     ])
 
-    assert.deepEqual(output[0].marks.body, [
+    assert.deepEqual(output[0].body[0].marks, [
       {
         type: 'raw',
         text: 'Yaml '
@@ -174,7 +174,7 @@ test.group('Search', (group) => {
     }
 
     const output = await search.search(indexFile, 'different')
-    assert.equal(output[0].ref, '/hello#this-is-section-3')
+    assert.equal(output[0].url, '/hello#this-is-section-3')
     search.loadIndex = _loadIndex
   })
 
@@ -276,5 +276,136 @@ test.group('Search', (group) => {
 
     const output = await search.search(indexFile, 'section', 1)
     assert.lengthOf(output, 1)
+  })
+
+  test('find multiple sections within the same heading', async (assert) => {
+    const content = dedent`
+    # Hello world
+
+    This is the first paragraph
+
+    ## This is section 2
+    Here's the section2 content
+
+    and section2 is nice
+
+    ### This is section 2.1
+    Here's the section 2.1 content
+
+    ## This is section 3
+    Some different content
+    `
+
+    const markdown = new Markdown(content)
+    const vfile = await markdown.toJSON()
+
+    const index = new Index(indexFile)
+    index.addDoc(vfile.contents, '/hello')
+    await index.save()
+
+    const output = await search.search(indexFile, 'section2')
+    assert.equal(output[0].url, '/hello#this-is-section-2')
+
+    assert.deepEqual(output[0].title.marks, [
+      {
+        type: 'raw',
+        text: 'This is section 2'
+      }
+    ])
+
+    assert.deepEqual(output[0].body[0].marks, [
+      {
+        type: 'raw',
+        text: 'and '
+      },
+      {
+        type: 'mark',
+        text: 'section2'
+      },
+      {
+        type: 'raw',
+        text: ' is nice'
+      }
+    ])
+
+    assert.deepEqual(output[0].body[1].marks, [
+      {
+        type: 'raw',
+        text: 'Here\'s the '
+      },
+      {
+        type: 'mark',
+        text: 'section2'
+      },
+      {
+        type: 'raw',
+        text: ' content'
+      }
+    ])
+  })
+
+  test('return first paragraph when nothing matches in body but does matches in title', async (assert) => {
+    const content = dedent`
+    # Hello world
+
+    This is the first paragraph
+
+    ### This is section2
+    Here's the content
+
+    ## This is section 3
+    Some different content
+    `
+
+    const markdown = new Markdown(content)
+    const vfile = await markdown.toJSON()
+
+    const index = new Index(indexFile)
+    index.addDoc(vfile.contents, '/hello')
+    await index.save()
+
+    const output = await search.search(indexFile, 'section2')
+    assert.equal(output[0].url, '/hello#this-is-section2')
+
+    assert.deepEqual(output[0].title.marks, [
+      {
+        type: 'raw',
+        text: 'This is '
+      },
+      {
+        type: 'mark',
+        text: 'section2'
+      }
+    ])
+
+    assert.deepEqual(output[0].body[0].marks, [
+      {
+        type: 'raw',
+        text: 'Here\'s the content'
+      }
+    ])
+  })
+
+  test('do not break with special chars', async (assert) => {
+    const content = dedent`
+    # Hello world
+
+    This is the first paragraph
+
+    ### This is section2
+    Here's the content
+
+    ## This is section 3
+    Some different content
+    `
+
+    const markdown = new Markdown(content)
+    const vfile = await markdown.toJSON()
+
+    const index = new Index(indexFile)
+    index.addDoc(vfile.contents, '/hello')
+    await index.save()
+
+    await search.search(indexFile, 'https://')
   })
 })

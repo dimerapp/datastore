@@ -12,6 +12,64 @@ const fs = require('fs-extra')
 const toString = require('mdast-util-to-string')
 const lunr = require('lunr')
 const _ = require('lodash')
+const debug = require('debug')('dimer:index')
+
+/**
+ * Languages loaded, their is no need to load
+ * them again and again
+ */
+const loadedLanguages = []
+
+/**
+ * Supported languages. We check for languages here to
+ * avoid runtime `require` exceptions
+ */
+const whitelisted = [
+  'da',
+  'de',
+  'du',
+  'es',
+  'fi',
+  'fr',
+  'hu',
+  'it',
+  'ja',
+  'no',
+  'pt',
+  'ro',
+  'ru',
+  'sv',
+  'th',
+  'tr'
+]
+
+function loadLanguages (languages) {
+  if (!languages || !languages.length) {
+    return
+  }
+
+  /**
+   * Load basic multi-lingual stemmer and include it
+   * only once
+   */
+  if (loadedLanguages.length === 0) {
+    debug('loading stemmer')
+    require('lunr-languages/lunr.stemmer.support')(lunr)
+  }
+
+  languages = Array.isArray(languages) ? languages : [languages]
+  languages.forEach((language) => {
+    if (whitelisted.indexOf(language) === -1) {
+      return
+    }
+
+    if (loadedLanguages.indexOf(language) === -1) {
+      debug('loading language %s', language)
+      require(`lunr-languages/lunr.${language}`)(lunr)
+      loadedLanguages.push(language)
+    }
+  })
+}
 
 /**
  * Creates a search index for all the docs
@@ -21,11 +79,17 @@ const _ = require('lodash')
  * @param {String} indexPath
  */
 class Index {
-  constructor (indexPath) {
+  constructor (indexPath, languages) {
     this.indexPath = indexPath
-    this.blackListedBlockTags = ['pre']
+    this.blackListedBlockTags = ['pre', 'html', 'image', 'imageReference', 'linkReference', 'th']
     this.blackListedClasses = ['dimer-highlight', 'toc-container']
     this.headings = ['h1', 'h2', 'h3', 'h4']
+    this.languages = languages
+
+    /**
+     * Load the languages upfront
+     */
+    loadLanguages(this.languages)
 
     /**
      * Each child of ul is seperated by a space
@@ -56,7 +120,9 @@ class Index {
    * @private
    */
   _isWhiteListed ({ tag, props }) {
-    return this.blackListedBlockTags.indexOf(tag) === -1 && this.blackListedClasses.indexOf(props.className) === -1
+    return this.blackListedBlockTags.indexOf(tag) === -1 && _.every(props.className, (className) => {
+      return !_.includes(this.blackListedClasses, className)
+    })
   }
 
   /**
@@ -82,19 +148,60 @@ class Index {
    *
    * @param  {Object}     node
    *
-   * @return {String}
+   * @return {Array}
    *
    * @private
    */
   _nodeToString (node) {
-    if (node.type === 'element') {
-      if (this._isWhiteListed(node)) {
-        return node.children.map((n) => this._nodeToString(n)).join(this.spacer[node.tag] || '')
-      }
-      return ''
+    if (node.type !== 'element') {
+      return [toString(node)]
     }
 
-    return toString(node)
+    /**
+     * Return if node is not white listed
+     */
+    if (!this._isWhiteListed(node)) {
+      return []
+    }
+
+    /**
+     * For the paragraph, we make everything into a big string
+     */
+    if (node.tag === 'p') {
+      const parsed = toString(node)
+      return parsed.length ? [parsed] : []
+    }
+
+    /**
+     * For each tr, we ignore the {TH's} and process
+     * the {TD's} as one space seperated string.
+     */
+    if (node.tag === 'tr') {
+      return node.children.reduce((result, item) => {
+        if (!this._isWhiteListed(item)) {
+          return result
+        }
+
+        const parsed = toString(item)
+        if (parsed.length) {
+          result = result.concat(parsed)
+        }
+
+        return result
+      }, []).join(' ')
+    }
+
+    /**
+     * For everything else, we just loop over the children
+     * and convert them one by one.
+     */
+    return node.children.reduce((result, item) => {
+      const parsed = this._nodeToString(item)
+      if (parsed.length) {
+        result = result.concat(parsed)
+      }
+      return result
+    }, [])
   }
 
   /**
@@ -117,12 +224,15 @@ class Index {
       .map((child) => {
         if (this._isHeading(child)) {
           sectionUrl = child.tag === 'h1' ? permalink : `${permalink}${child.children[0].props.href}`
-          this.docs[sectionUrl] = { title: toString(child), body: '', url: sectionUrl }
+          this.docs[sectionUrl] = { title: toString(child), nodes: [], url: sectionUrl }
           return
         }
 
         if (sectionUrl && this.docs[sectionUrl]) {
-          this.docs[sectionUrl].body += this._nodeToString(child)
+          const parsed = this._nodeToString(child)
+          if (parsed.length) {
+            this.docs[sectionUrl].nodes = this.docs[sectionUrl].nodes.concat(parsed)
+          }
         }
       })
   }
@@ -138,12 +248,38 @@ class Index {
     const self = this
 
     const index = lunr(function () {
+      if (Array.isArray(this.languages) && !lunr.multiLanguage) {
+        debug('using languages %o', this.languages)
+        require('lunr-languages/lunr.multi')(lunr)
+        this.use(lunr.multiLanguage(...this.languages))
+      } else if (typeof (this.languages === 'string') && this.languages) {
+        this.use(lunr[this.languages])
+        debug('using language %o', this.language)
+      }
+
       this.ref('url')
-      this.field('title', { boost: 2 })
-      this.field('body', { boost: 1 })
+      this.field('content', { boost: 2 })
       this.metadataWhitelist = ['position']
 
-      _.each(self.docs, (doc) => (this.add(doc)))
+      _.each(self.docs, (doc) => {
+        /**
+         * The title will be first item for that doc
+         */
+        this.add({
+          url: `${doc.url}@lvl0`,
+          content: doc.title
+        })
+
+        /**
+         * Then we save each node
+         */
+        _.each(doc.nodes, (content, index) => {
+          this.add({
+            url: `${doc.url}@lvl${index + 1}`,
+            content: content
+          })
+        })
+      })
     })
 
     await fs.outputJSON(this.indexPath, {

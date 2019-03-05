@@ -27,7 +27,7 @@ test.group('Datastore', (group) => {
     await fs.remove(baseDir)
   })
 
-  test('raise error when versionNo or fileName is missing when saving doc', async (assert) => {
+  test('raise error when zoneSlug, versionNo or fileName is missing when saving doc', async (assert) => {
     assert.plan(1)
 
     const store = new Datastore(ctx)
@@ -35,7 +35,7 @@ test.group('Datastore', (group) => {
     try {
       await store.saveDoc()
     } catch ({ message }) {
-      assert.equal(message, 'Expected `versionNo` to be of type `string` but received type `undefined`')
+      assert.equal(message, 'Expected `zoneSlug` to be of type `string` but received type `undefined`')
     }
   })
 
@@ -43,7 +43,7 @@ test.group('Datastore', (group) => {
     const store = new Datastore(ctx)
     await store.db.load()
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('guides', '1.0.0', 'foo.md', {
       title: 'Hello',
       permalink: '/hello',
       category: 'root',
@@ -56,27 +56,31 @@ test.group('Datastore', (group) => {
     await store.persist()
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
-    const doc = await fs.readJSON(join(domainDir, '1.0.0', 'foo.json'))
+    const doc = await fs.readJSON(join(domainDir, 'guides', '1.0.0', 'foo.json'))
 
     assert.deepEqual(doc, { type: 'root', children: [{}] })
     assert.deepEqual(metaFile, {
-      versions: [
-        {
-          no: '1.0.0',
-          name: '1.0.0',
-          draft: false,
-          default: false,
-          depreciated: false,
-          docs: [
-            {
-              jsonPath: 'foo.json',
-              permalink: '/hello',
-              title: 'Hello',
-              category: 'root'
-            }
-          ]
-        }
-      ]
+      zones: [{
+        slug: 'guides',
+        name: 'guides',
+        versions: [
+          {
+            no: '1.0.0',
+            name: '1.0.0',
+            draft: false,
+            default: false,
+            depreciated: false,
+            docs: [
+              {
+                jsonPath: 'foo.json',
+                permalink: '/hello',
+                title: 'Hello',
+                category: 'root'
+              }
+            ]
+          }
+        ]
+      }]
     })
   })
 
@@ -98,7 +102,7 @@ test.group('Datastore', (group) => {
     }
 
     try {
-      await store.saveDoc('1.0.0', 'foo.md', {
+      await store.saveDoc('guides', '1.0.0', 'foo.md', {
         permalink: '/hello',
         category: 'root',
         content: nodes
@@ -117,7 +121,7 @@ test.group('Datastore', (group) => {
       children: [{}]
     }
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('guides', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
@@ -126,27 +130,31 @@ test.group('Datastore', (group) => {
     await store.persist()
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
-    const doc = await fs.readJSON(join(domainDir, '1.0.0', 'foo.json'))
+    const doc = await fs.readJSON(join(domainDir, 'guides', '1.0.0', 'foo.json'))
 
     assert.deepEqual(doc, nodes)
     assert.deepEqual(metaFile, {
-      versions: [
-        {
-          no: '1.0.0',
-          name: '1.0.0',
-          draft: false,
-          default: false,
-          depreciated: false,
-          docs: [
-            {
-              jsonPath: 'foo.json',
-              permalink: '/hello',
-              title: 'Hello world',
-              category: 'root'
-            }
-          ]
-        }
-      ]
+      zones: [{
+        slug: 'guides',
+        name: 'guides',
+        versions: [
+          {
+            no: '1.0.0',
+            name: '1.0.0',
+            draft: false,
+            default: false,
+            depreciated: false,
+            docs: [
+              {
+                jsonPath: 'foo.json',
+                permalink: '/hello',
+                title: 'Hello world',
+                category: 'root'
+              }
+            ]
+          }
+        ]
+      }]
     })
   })
 
@@ -154,7 +162,7 @@ test.group('Datastore', (group) => {
     const store = new Datastore(ctx)
     await store.db.load()
 
-    const { added, removed } = await store.syncVersions([
+    const { added, removed } = await store.syncVersions('guides', [
       {
         no: '1.0.0'
       },
@@ -165,31 +173,34 @@ test.group('Datastore', (group) => {
     ])
 
     await store.persist()
-
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
 
     assert.deepEqual(removed, [])
-    assert.deepEqual(added, metaFile.versions.map((v) => _.omit(v, 'docs')))
+    assert.deepEqual(added, metaFile.zones[0].versions.map((v) => _.omit(v, 'docs')))
 
     assert.deepEqual(metaFile, {
-      versions: [
-        {
-          no: '1.0.0',
-          name: '1.0.0',
-          default: false,
-          depreciated: false,
-          draft: false,
-          docs: []
-        },
-        {
-          no: '1.0.1',
-          name: '1.0.1',
-          default: true,
-          depreciated: false,
-          draft: false,
-          docs: []
-        }
-      ]
+      zones: [{
+        slug: 'guides',
+        name: 'guides',
+        versions: [
+          {
+            no: '1.0.0',
+            name: '1.0.0',
+            default: false,
+            depreciated: false,
+            draft: false,
+            docs: []
+          },
+          {
+            no: '1.0.1',
+            name: '1.0.1',
+            default: true,
+            depreciated: false,
+            draft: false,
+            docs: []
+          }
+        ]
+      }]
     })
   })
 
@@ -202,13 +213,13 @@ test.group('Datastore', (group) => {
       children: [{}]
     }
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('guides', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    const { removed, added } = await store.syncVersions([
+    const { removed, added } = await store.syncVersions('guides', [
       {
         no: '1.0.0',
         name: 'Version 1'
@@ -234,31 +245,35 @@ test.group('Datastore', (group) => {
     ])
 
     assert.deepEqual(metaFile, {
-      versions: [
-        {
-          no: '1.0.0',
-          name: 'Version 1',
-          default: false,
-          depreciated: false,
-          draft: false,
-          docs: [
-            {
-              jsonPath: 'foo.json',
-              permalink: '/hello',
-              category: 'root',
-              title: 'Hello world'
-            }
-          ]
-        },
-        {
-          no: '1.0.1',
-          name: '1.0.1',
-          default: true,
-          depreciated: false,
-          draft: false,
-          docs: []
-        }
-      ]
+      zones: [{
+        slug: 'guides',
+        name: 'guides',
+        versions: [
+          {
+            no: '1.0.0',
+            name: 'Version 1',
+            default: false,
+            depreciated: false,
+            draft: false,
+            docs: [
+              {
+                jsonPath: 'foo.json',
+                permalink: '/hello',
+                category: 'root',
+                title: 'Hello world'
+              }
+            ]
+          },
+          {
+            no: '1.0.1',
+            name: '1.0.1',
+            default: true,
+            depreciated: false,
+            draft: false,
+            docs: []
+          }
+        ]
+      }]
     })
   })
 
@@ -271,19 +286,19 @@ test.group('Datastore', (group) => {
       children: [{}]
     }
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('guides', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    await store.saveDoc('1.0.1', 'foo.md', {
+    await store.saveDoc('guides', '1.0.1', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    const { removed, added } = await store.syncVersions([
+    const { removed, added, updated } = await store.syncVersions('guides', [
       {
         no: '1.0.0',
         name: 'Version 1'
@@ -294,6 +309,16 @@ test.group('Datastore', (group) => {
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
     assert.deepEqual(added, [])
+    assert.deepEqual(updated, [
+      {
+        no: '1.0.0',
+        name: 'Version 1',
+        default: false,
+        depreciated: false,
+        draft: false
+      }
+    ])
+
     assert.deepEqual(removed, [
       {
         no: '1.0.1',
@@ -305,23 +330,27 @@ test.group('Datastore', (group) => {
     ])
 
     assert.deepEqual(metaFile, {
-      versions: [
-        {
-          no: '1.0.0',
-          name: 'Version 1',
-          default: false,
-          depreciated: false,
-          draft: false,
-          docs: [
-            {
-              jsonPath: 'foo.json',
-              permalink: '/hello',
-              category: 'root',
-              title: 'Hello world'
-            }
-          ]
-        }
-      ]
+      zones: [{
+        slug: 'guides',
+        name: 'guides',
+        versions: [
+          {
+            no: '1.0.0',
+            name: 'Version 1',
+            default: false,
+            depreciated: false,
+            draft: false,
+            docs: [
+              {
+                jsonPath: 'foo.json',
+                permalink: '/hello',
+                category: 'root',
+                title: 'Hello world'
+              }
+            ]
+          }
+        ]
+      }]
     })
   })
 
@@ -334,13 +363,13 @@ test.group('Datastore', (group) => {
       children: [{}]
     }
 
-    await store.saveDoc('1.0.1', 'foo.md', {
+    await store.saveDoc('guides', '1.0.1', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    const { added, removed } = await store.syncVersions([
+    const { added, removed } = await store.syncVersions('guides', [
       {
         no: '1.0.0',
         name: 'Version 1'
@@ -371,16 +400,20 @@ test.group('Datastore', (group) => {
     ])
 
     assert.deepEqual(metaFile, {
-      versions: [
-        {
-          no: '1.0.0',
-          name: 'Version 1',
-          default: false,
-          depreciated: false,
-          draft: false,
-          docs: []
-        }
-      ]
+      zones: [{
+        slug: 'guides',
+        name: 'guides',
+        versions: [
+          {
+            no: '1.0.0',
+            name: 'Version 1',
+            default: false,
+            depreciated: false,
+            draft: false,
+            docs: []
+          }
+        ]
+      }]
     })
   })
 
@@ -393,24 +426,24 @@ test.group('Datastore', (group) => {
       children: [{}]
     }
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('guides', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    await store.saveDoc('1.0.1', 'foo.md', {
+    await store.saveDoc('guides', '1.0.1', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    let v1 = await fs.pathExists(join(domainDir, '1.0.0', 'foo.json'))
-    let v2 = await fs.pathExists(join(domainDir, '1.0.1', 'foo.json'))
+    let v1 = await fs.pathExists(join(domainDir, 'guides', '1.0.0', 'foo.json'))
+    let v2 = await fs.pathExists(join(domainDir, 'guides', '1.0.1', 'foo.json'))
     assert.isTrue(v1)
     assert.isTrue(v2)
 
-    await store.syncVersions([
+    await store.syncVersions('guides', [
       {
         no: '1.0.0',
         name: 'Version 1'
@@ -419,30 +452,34 @@ test.group('Datastore', (group) => {
 
     await store.persist()
 
-    v1 = await fs.pathExists(join(domainDir, '1.0.0', 'foo.json'))
-    v2 = await fs.pathExists(join(domainDir, '1.0.1', 'foo.json'))
+    v1 = await fs.pathExists(join(domainDir, 'guides', '1.0.0', 'foo.json'))
+    v2 = await fs.pathExists(join(domainDir, 'guides', '1.0.1', 'foo.json'))
     assert.isTrue(v1)
     assert.isFalse(v2)
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
     assert.deepEqual(metaFile, {
-      versions: [
-        {
-          no: '1.0.0',
-          name: 'Version 1',
-          default: false,
-          depreciated: false,
-          draft: false,
-          docs: [
-            {
-              jsonPath: 'foo.json',
-              permalink: '/hello',
-              category: 'root',
-              title: 'Hello world'
-            }
-          ]
-        }
-      ]
+      zones: [{
+        slug: 'guides',
+        name: 'guides',
+        versions: [
+          {
+            no: '1.0.0',
+            name: 'Version 1',
+            default: false,
+            depreciated: false,
+            draft: false,
+            docs: [
+              {
+                jsonPath: 'foo.json',
+                permalink: '/hello',
+                category: 'root',
+                title: 'Hello world'
+              }
+            ]
+          }
+        ]
+      }]
     })
   })
 
@@ -455,30 +492,34 @@ test.group('Datastore', (group) => {
       children: [{}]
     }
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('guides', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    await store.removeDoc('1.0.0', 'foo.md')
+    await store.removeDoc('guides', '1.0.0', 'foo.md')
     await store.persist()
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
-    const foo = await fs.pathExists(join(domainDir, '1.0.0', 'foo.json'))
+    const foo = await fs.pathExists(join(domainDir, 'guides', '1.0.0', 'foo.json'))
     assert.isFalse(foo)
 
     assert.deepEqual(metaFile, {
-      versions: [
-        {
-          no: '1.0.0',
-          name: '1.0.0',
-          default: false,
-          depreciated: false,
-          draft: false,
-          docs: []
-        }
-      ]
+      zones: [{
+        slug: 'guides',
+        name: 'guides',
+        versions: [
+          {
+            no: '1.0.0',
+            name: '1.0.0',
+            default: false,
+            depreciated: false,
+            draft: false,
+            docs: []
+          }
+        ]
+      }]
     })
   })
 
@@ -491,38 +532,49 @@ test.group('Datastore', (group) => {
       children: [{}]
     }
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('guides', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    await store.removeDoc('1.0.1', 'foo.md')
+    await store.removeDoc('guides', '1.0.1', 'foo.md')
     await store.persist()
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
-    const foo = await fs.pathExists(join(domainDir, '1.0.0', 'foo.json'))
+    const foo = await fs.pathExists(join(domainDir, 'guides', '1.0.0', 'foo.json'))
     assert.isTrue(foo)
 
     assert.deepEqual(metaFile, {
-      versions: [
-        {
-          no: '1.0.0',
-          name: '1.0.0',
-          default: false,
-          depreciated: false,
-          draft: false,
-          docs: [
-            {
-              title: 'Hello world',
-              permalink: '/hello',
-              category: 'root',
-              jsonPath: 'foo.json'
-            }
-          ]
-        }
-      ]
+      zones: [{
+        slug: 'guides',
+        name: 'guides',
+        versions: [
+          {
+            no: '1.0.0',
+            name: '1.0.0',
+            default: false,
+            depreciated: false,
+            draft: false,
+            docs: [
+              {
+                title: 'Hello world',
+                permalink: '/hello',
+                category: 'root',
+                jsonPath: 'foo.json'
+              }
+            ]
+          }
+        ]
+      }]
     })
+  })
+
+  test('return null from getVersions when zone is missing', async (assert) => {
+    const store = new Datastore(ctx)
+    await store.db.load()
+
+    assert.isNull(store.getVersions('faq'))
   })
 
   test('return an array of versions', async (assert) => {
@@ -534,14 +586,13 @@ test.group('Datastore', (group) => {
       children: [{}]
     }
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('faq', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    const versions = store.getVersions()
-
+    const versions = store.getVersions('faq')
     assert.deepEqual(versions, [
       {
         no: '1.0.0',
@@ -559,7 +610,7 @@ test.group('Datastore', (group) => {
     ])
   })
 
-  test('get docs for an array of version', async (assert) => {
+  test('get docs as an array for a version', async (assert) => {
     const store = new Datastore(ctx)
     await store.db.load()
 
@@ -568,13 +619,13 @@ test.group('Datastore', (group) => {
       children: [{}]
     }
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('guides', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    const docs = await store.getTree('1.0.0')
+    const docs = await store.getTree('guides', '1.0.0')
     assert.deepEqual(docs, [
       {
         category: 'root',
@@ -598,13 +649,32 @@ test.group('Datastore', (group) => {
       children: [{}]
     }
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('api', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    const docs = await store.getTree('1.0.1')
+    const docs = await store.getTree('api', '1.0.1')
+    assert.isNull(docs)
+  })
+
+  test('return null when zone doesn\'t exists', async (assert) => {
+    const store = new Datastore(ctx)
+    await store.db.load()
+
+    const nodes = {
+      type: 'root',
+      children: [{}]
+    }
+
+    await store.saveDoc('api', '1.0.0', 'foo.md', {
+      title: 'Hello world',
+      permalink: '/hello',
+      content: nodes
+    })
+
+    const docs = await store.getTree('guides', '1.0.0')
     assert.isNull(docs)
   })
 
@@ -617,19 +687,19 @@ test.group('Datastore', (group) => {
       children: [{}]
     }
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('api', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    await store.saveDoc('1.0.0', 'bar.md', {
+    await store.saveDoc('api', '1.0.0', 'bar.md', {
       title: 'Hello world',
       permalink: '/bar',
       content: nodes
     })
 
-    const docs = await store.getTree('1.0.0')
+    const docs = await store.getTree('api', '1.0.0')
     assert.deepEqual(docs, [
       {
         category: 'root',
@@ -658,19 +728,19 @@ test.group('Datastore', (group) => {
       children: [{}]
     }
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('api', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    await store.saveDoc('1.0.0', 'bar.md', {
+    await store.saveDoc('api', '1.0.0', 'bar.md', {
       title: 'Hello world',
       permalink: '/bar',
       content: nodes
     })
 
-    const docs = await store.getTree('1.0.0', 0, true)
+    const docs = await store.getTree('api', '1.0.0', 0, true)
     assert.deepEqual(docs, [
       {
         category: 'root',
@@ -701,19 +771,19 @@ test.group('Datastore', (group) => {
       children: [{}]
     }
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('api', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    await store.saveDoc('1.0.0', 'bar.md', {
+    await store.saveDoc('api', '1.0.0', 'bar.md', {
       title: 'Hello world',
       permalink: '/bar',
       content: nodes
     })
 
-    const docs = await store.getTree('1.0.0', 0, true, true)
+    const docs = await store.getTree('api', '1.0.0', 0, true, true)
     assert.deepEqual(docs, [
       {
         category: 'root',
@@ -758,19 +828,19 @@ test.group('Datastore', (group) => {
       children: [{}]
     }
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('guides', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    await store.saveDoc('1.0.0', 'bar.md', {
+    await store.saveDoc('guides', '1.0.0', 'bar.md', {
       title: 'Hello world',
       permalink: '/bar',
       content: nodes
     })
 
-    const docs = await store.getTree('1.0.0', 1, true)
+    const docs = await store.getTree('guides', '1.0.0', 1, true)
     assert.deepEqual(docs, [
       {
         category: 'root',
@@ -795,13 +865,13 @@ test.group('Datastore', (group) => {
       children: [{}]
     }
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('guides', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    const doc = await store.getDoc('1.0.0', 'foo.json')
+    const doc = await store.getDoc('guides', '1.0.0', 'foo.json')
     assert.deepEqual(doc, {
       title: 'Hello world',
       permalink: '/hello',
@@ -819,13 +889,13 @@ test.group('Datastore', (group) => {
       children: [{}]
     }
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('guides', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    const doc = await store.getDoc('1.0.0', 'foo.json', true)
+    const doc = await store.getDoc('guides', '1.0.0', 'foo.json', true)
 
     assert.deepEqual(doc, {
       title: 'Hello world',
@@ -851,13 +921,13 @@ test.group('Datastore', (group) => {
       children: [{}]
     }
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('guides', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    const doc = await store.getDoc('1.0.0', 'bar.json')
+    const doc = await store.getDoc('guides', '1.0.0', 'bar.json')
     assert.isNull(doc)
   })
 
@@ -870,13 +940,13 @@ test.group('Datastore', (group) => {
       children: [{}]
     }
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('guides', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    const doc = await store.getDocByPermalink('1.0.0', '/hello')
+    const doc = await store.getDocByPermalink('guides', '1.0.0', '/hello')
     assert.deepEqual(doc, {
       title: 'Hello world',
       permalink: '/hello',
@@ -894,13 +964,13 @@ test.group('Datastore', (group) => {
       children: [{}]
     }
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('guides', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    const doc = await store.getDocByPermalink('1.0.0', '/hello', true)
+    const doc = await store.getDocByPermalink('guides', '1.0.0', '/hello', true)
     assert.deepEqual(doc, {
       title: 'Hello world',
       permalink: '/hello',
@@ -925,13 +995,13 @@ test.group('Datastore', (group) => {
       children: [{}]
     }
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('guides', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    const doc = await store.getDocByPermalink('1.0.0', 'foo')
+    const doc = await store.getDocByPermalink('guides', '1.0.0', 'foo')
     assert.isNull(doc)
   })
 
@@ -948,36 +1018,36 @@ test.group('Datastore', (group) => {
 
     const fooFile = await new Markdown(template).toJSON()
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('guides', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: fooFile.contents
     })
 
-    await store.saveDoc('1.0.1', 'foo.md', {
+    await store.saveDoc('guides', '1.0.1', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: fooFile.contents
     })
 
-    await store.indexVersion('1.0.0')
-    const indexFile = await fs.readJSON(join(domainDir, '1.0.0', 'search.json'))
+    await store.indexVersion('guides', '1.0.0')
+    const indexFile = await fs.readJSON(join(domainDir, 'guides', '1.0.0', 'search.json'))
 
     assert.deepEqual(indexFile.docs, {
       '/hello#this-is-a-section': {
         title: 'This is a section',
-        body: 'Some content here',
+        nodes: ['Some content here'],
         url: '/hello#this-is-a-section'
       }
     })
 
-    await store.indexVersion('1.0.1')
-    const indexFile1 = await fs.readJSON(join(domainDir, '1.0.1', 'search.json'))
+    await store.indexVersion('guides', '1.0.1')
+    const indexFile1 = await fs.readJSON(join(domainDir, 'guides', '1.0.1', 'search.json'))
 
     assert.deepEqual(indexFile1.docs, {
       '/hello#this-is-a-section': {
         title: 'This is a section',
-        body: 'Some content here',
+        nodes: ['Some content here'],
         url: '/hello#this-is-a-section'
       }
     })
@@ -1004,31 +1074,31 @@ test.group('Datastore', (group) => {
     const fooFile = await new Markdown(template).toJSON()
     const fooFile1 = await new Markdown(template1).toJSON()
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('guides', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: fooFile.contents
     })
 
-    await store.saveDoc('1.0.1', 'foo.md', {
+    await store.saveDoc('guides', '1.0.1', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: fooFile1.contents
     })
 
-    await store.indexVersion('1.0.0')
-    await store.indexVersion('1.0.1')
+    await store.indexVersion('guides', '1.0.0')
+    await store.indexVersion('guides', '1.0.1')
 
-    let dbSearch = await store.search('1.0.0', 'Database')
-    let routingSearch = await store.search('1.0.0', 'Routing')
+    let dbSearch = await store.search('guides', '1.0.0', 'Database')
+    let routingSearch = await store.search('guides', '1.0.0', 'Routing')
 
-    assert.equal(dbSearch[0].ref, '/hello#database')
+    assert.equal(dbSearch[0].url, '/hello#database')
     assert.deepEqual(routingSearch, [])
 
-    dbSearch = await store.search('1.0.1', 'Database')
-    routingSearch = await store.search('1.0.1', 'Routing')
+    dbSearch = await store.search('guides', '1.0.1', 'Database')
+    routingSearch = await store.search('guides', '1.0.1', 'Routing')
 
-    assert.equal(routingSearch[0].ref, '/hello#routing')
+    assert.equal(routingSearch[0].url, '/hello#routing')
     assert.deepEqual(dbSearch, [])
   })
 
@@ -1038,7 +1108,7 @@ test.group('Datastore', (group) => {
     const store = new Datastore(ctx)
     await store.db.load()
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('api', '1.0.0', 'foo.md', {
       title: 'Hello',
       permalink: '/hello',
       category: 'root',
@@ -1049,7 +1119,7 @@ test.group('Datastore', (group) => {
     })
 
     try {
-      await store.saveDoc('1.0.0', 'bar.md', {
+      await store.saveDoc('api', '1.0.0', 'bar.md', {
         title: 'Hello',
         permalink: '/hello',
         category: 'root',
@@ -1075,14 +1145,14 @@ test.group('Datastore', (group) => {
       children: [{}]
     }
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('api', '1.0.0', 'foo.md', {
       title: 'Hello',
       permalink: '/hello',
       category: 'root',
       content: nodes
     })
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('api', '1.0.0', 'foo.md', {
       title: 'Updated Title',
       permalink: '/hello',
       category: 'root',
@@ -1092,27 +1162,102 @@ test.group('Datastore', (group) => {
     await store.persist()
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
-    const doc = await fs.readJSON(join(domainDir, '1.0.0', 'foo.json'))
+    const doc = await fs.readJSON(join(domainDir, 'api', '1.0.0', 'foo.json'))
 
     assert.deepEqual(doc, nodes)
     assert.deepEqual(metaFile, {
-      versions: [
-        {
-          default: false,
-          depreciated: false,
-          draft: false,
-          name: '1.0.0',
-          no: '1.0.0',
-          docs: [
-            {
-              jsonPath: 'foo.json',
-              category: 'root',
-              permalink: '/hello',
-              title: 'Updated Title'
-            }
-          ]
-        }
-      ]
+      zones: [{
+        slug: 'api',
+        name: 'api',
+        versions: [
+          {
+            default: false,
+            depreciated: false,
+            draft: false,
+            name: '1.0.0',
+            no: '1.0.0',
+            docs: [
+              {
+                jsonPath: 'foo.json',
+                category: 'root',
+                permalink: '/hello',
+                title: 'Updated Title'
+              }
+            ]
+          }
+        ]
+      }]
+    })
+  })
+
+  test('work fine when updating doc with same permalink in different version', async (assert) => {
+    assert.plan(2)
+
+    const store = new Datastore(ctx)
+    await store.db.load()
+
+    const nodes = {
+      type: 'root',
+      children: [{}]
+    }
+
+    await store.saveDoc('api', '1.0.0', 'foo.md', {
+      title: 'Hello',
+      permalink: '/hello',
+      category: 'root',
+      content: nodes
+    })
+
+    await store.saveDoc('api', '1.0.1', 'bar.md', {
+      title: 'Updated Title',
+      permalink: '/hello',
+      category: 'root',
+      content: nodes
+    })
+
+    await store.persist()
+
+    const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
+    const doc = await fs.readJSON(join(domainDir, 'api', '1.0.0', 'foo.json'))
+
+    assert.deepEqual(doc, nodes)
+    assert.deepEqual(metaFile, {
+      zones: [{
+        slug: 'api',
+        name: 'api',
+        versions: [
+          {
+            default: false,
+            depreciated: false,
+            draft: false,
+            name: '1.0.0',
+            no: '1.0.0',
+            docs: [
+              {
+                jsonPath: 'foo.json',
+                category: 'root',
+                permalink: '/hello',
+                title: 'Hello'
+              }
+            ]
+          },
+          {
+            default: false,
+            depreciated: false,
+            draft: false,
+            name: '1.0.1',
+            no: '1.0.1',
+            docs: [
+              {
+                jsonPath: 'bar.json',
+                category: 'root',
+                permalink: '/hello',
+                title: 'Updated Title'
+              }
+            ]
+          }
+        ]
+      }]
     })
   })
 
@@ -1129,16 +1274,16 @@ test.group('Datastore', (group) => {
 
     const fooFile = await new Markdown(template).toJSON()
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('guides', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: fooFile.contents
     })
 
-    await store.indexVersion('1.0.0')
+    await store.indexVersion('guides', '1.0.0')
 
-    await store.removeDoc('1.0.0', 'foo.md')
-    await store.indexVersion('1.0.0')
+    await store.removeDoc('guides', '1.0.0', 'foo.md')
+    await store.indexVersion('guides', '1.0.0')
 
     let search = await store.search('1.0.0', 'Database')
     assert.deepEqual(search, [])
@@ -1157,14 +1302,14 @@ test.group('Datastore', (group) => {
 
     const fooFile = await new Markdown(template).toJSON()
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('api', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: fooFile.contents,
       redirects: ['/hel', '/helo']
     })
 
-    const redirectTo = store.redirectedPermalink('1.0.0', 'hel')
+    const redirectTo = store.redirectedPermalink('api', '1.0.0', 'hel')
     assert.equal(redirectTo, '/hello')
   })
 
@@ -1181,13 +1326,13 @@ test.group('Datastore', (group) => {
 
     const fooFile = await new Markdown(template).toJSON()
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('api', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: fooFile.contents
     })
 
-    const redirectTo = store.redirectedPermalink('1.0.0', 'hel')
+    const redirectTo = store.redirectedPermalink('api', '1.0.0', 'hel')
     assert.isNull(redirectTo)
   })
 
@@ -1200,13 +1345,13 @@ test.group('Datastore', (group) => {
       children: [{}]
     }
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('api', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
     })
 
-    const doc = await store.getDocByPermalink('1.0.0', 'hello')
+    const doc = await store.getDocByPermalink('api', '1.0.0', 'hello')
     assert.deepEqual(doc, {
       title: 'Hello world',
       permalink: '/hello',
@@ -1224,7 +1369,7 @@ test.group('Datastore', (group) => {
       children: [{}]
     }
 
-    await store.saveDoc('1.0.0', 'foo.md', {
+    await store.saveDoc('guides', '1.0.0', 'foo.md', {
       title: 'Hello world',
       permalink: '/hello',
       content: nodes
@@ -1232,24 +1377,24 @@ test.group('Datastore', (group) => {
 
     await store.persist()
     let metaFile = await fs.exists(join(domainDir, 'meta.json'))
-    let saveFile = await fs.exists(join(domainDir, '1.0.0', 'foo.json'))
+    let saveFile = await fs.exists(join(domainDir, 'guides', '1.0.0', 'foo.json'))
 
     assert.isTrue(metaFile)
     assert.isTrue(saveFile)
 
     await store.load(true)
 
-    saveFile = await fs.exists(join(domainDir, '1.0.0', 'foo.json'))
+    saveFile = await fs.exists(join(domainDir, 'guides', '1.0.0', 'foo.json'))
     assert.isFalse(saveFile)
 
-    assert.deepEqual(store.db.data, { versions: [] })
+    assert.deepEqual(store.db.data, { zones: [] })
   })
 
   test('save doc with nested baseName', async (assert) => {
     const store = new Datastore(ctx)
     await store.db.load()
 
-    await store.saveDoc('1.0.0', 'foo/bar.md', {
+    await store.saveDoc('api', '1.0.0', 'foo/bar.md', {
       title: 'Hello',
       permalink: '/hello',
       category: 'root',
@@ -1262,27 +1407,31 @@ test.group('Datastore', (group) => {
     await store.persist()
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
-    const doc = await fs.readJSON(join(domainDir, '1.0.0', 'foo/bar.json'))
+    const doc = await fs.readJSON(join(domainDir, 'api', '1.0.0', 'foo/bar.json'))
 
     assert.deepEqual(doc, { type: 'root', children: [{}] })
     assert.deepEqual(metaFile, {
-      versions: [
-        {
-          no: '1.0.0',
-          name: '1.0.0',
-          draft: false,
-          default: false,
-          depreciated: false,
-          docs: [
-            {
-              jsonPath: 'foo/bar.json',
-              permalink: '/hello',
-              title: 'Hello',
-              category: 'root'
-            }
-          ]
-        }
-      ]
+      zones: [{
+        slug: 'api',
+        name: 'api',
+        versions: [
+          {
+            no: '1.0.0',
+            name: '1.0.0',
+            draft: false,
+            default: false,
+            depreciated: false,
+            docs: [
+              {
+                jsonPath: 'foo/bar.json',
+                permalink: '/hello',
+                title: 'Hello',
+                category: 'root'
+              }
+            ]
+          }
+        ]
+      }]
     })
   })
 
@@ -1290,7 +1439,7 @@ test.group('Datastore', (group) => {
     const store = new Datastore(ctx)
     await store.db.load()
 
-    await store.saveDoc('1.0.0', win32.join('foo', 'bar.md'), {
+    await store.saveDoc('api', '1.0.0', win32.join('foo', 'bar.md'), {
       title: 'Hello',
       permalink: '/hello',
       category: 'root',
@@ -1303,27 +1452,294 @@ test.group('Datastore', (group) => {
     await store.persist()
 
     const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
-    const doc = await fs.readJSON(join(domainDir, '1.0.0', 'foo/bar.json'))
+    const doc = await fs.readJSON(join(domainDir, 'api', '1.0.0', 'foo/bar.json'))
 
     assert.deepEqual(doc, { type: 'root', children: [{}] })
     assert.deepEqual(metaFile, {
+      zones: [{
+        slug: 'api',
+        name: 'api',
+        versions: [
+          {
+            no: '1.0.0',
+            name: '1.0.0',
+            draft: false,
+            default: false,
+            depreciated: false,
+            docs: [
+              {
+                jsonPath: 'foo/bar.json',
+                permalink: '/hello',
+                title: 'Hello',
+                category: 'root'
+              }
+            ]
+          }
+        ]
+      }]
+    })
+  })
+
+  test('sync zones', async (assert) => {
+    const store = new Datastore(ctx)
+    await store.db.load()
+
+    const { added, removed } = await store.syncZones([{
+      slug: 'guides',
+      name: 'guides',
+      versions: [
+        {
+          no: '1.0.0'
+        },
+        {
+          no: '1.0.1',
+          default: true
+        }
+      ]
+    }])
+
+    await store.persist()
+    const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
+
+    assert.deepEqual(removed, [])
+    assert.deepEqual(added, [{
+      name: 'guides',
+      slug: 'guides',
+      versions: {
+        added: [
+          {
+            no: '1.0.0',
+            name: '1.0.0',
+            default: false,
+            depreciated: false,
+            draft: false
+          },
+          {
+            no: '1.0.1',
+            name: '1.0.1',
+            default: true,
+            depreciated: false,
+            draft: false
+          }
+        ],
+        removed: [],
+        updated: []
+      }
+    }])
+
+    assert.deepEqual(metaFile, {
+      zones: [{
+        slug: 'guides',
+        name: 'guides',
+        versions: [
+          {
+            no: '1.0.0',
+            name: '1.0.0',
+            default: false,
+            depreciated: false,
+            draft: false,
+            docs: []
+          },
+          {
+            no: '1.0.1',
+            name: '1.0.1',
+            default: true,
+            depreciated: false,
+            draft: false,
+            docs: []
+          }
+        ]
+      }]
+    })
+  })
+
+  test('remove old zones and its versions', async (assert) => {
+    const store = new Datastore(ctx)
+    await store.db.load()
+
+    store.db.saveVersion('guides', {
+      no: '1.0.0'
+    })
+
+    store.db.saveVersion('api', {
+      no: '1.0.0'
+    })
+
+    const { added, removed, updated } = await store.syncZones([{
+      slug: 'guides',
+      name: 'guides',
+      versions: [
+        {
+          no: '1.0.0',
+          default: true
+        }
+      ]
+    }])
+
+    await store.persist()
+    const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
+
+    assert.deepEqual(removed, [{
+      slug: 'api',
+      name: 'api',
       versions: [
         {
           no: '1.0.0',
           name: '1.0.0',
-          draft: false,
           default: false,
           depreciated: false,
-          docs: [
-            {
-              jsonPath: 'foo/bar.json',
-              permalink: '/hello',
-              title: 'Hello',
-              category: 'root'
-            }
-          ]
+          draft: false,
+          docs: []
         }
       ]
+    }])
+
+    assert.deepEqual(added, [])
+    assert.deepEqual(updated, [{
+      slug: 'guides',
+      name: 'guides',
+      versions: {
+        added: [],
+        removed: [],
+        updated: [
+          {
+            no: '1.0.0',
+            name: '1.0.0',
+            default: true,
+            depreciated: false,
+            draft: false
+          }
+        ]
+      }
+    }])
+
+    assert.deepEqual(metaFile, {
+      zones: [{
+        slug: 'guides',
+        name: 'guides',
+        versions: [
+          {
+            no: '1.0.0',
+            name: '1.0.0',
+            default: true,
+            depreciated: false,
+            draft: false,
+            docs: []
+          }
+        ]
+      }]
     })
+  })
+
+  test('update versions of updated zones', async (assert) => {
+    const store = new Datastore(ctx)
+    await store.db.load()
+
+    store.db.saveVersion('guides', { no: '1.0.0' })
+    store.db.saveVersion('api', { no: '1.0.0' })
+
+    const { added, removed, updated } = await store.syncZones([{
+      slug: 'guides',
+      name: 'The Guides',
+      versions: [
+        {
+          no: '1.0.1',
+          default: true
+        }
+      ]
+    }])
+
+    await store.persist()
+    const metaFile = await fs.readJSON(join(domainDir, 'meta.json'))
+
+    assert.deepEqual(removed, [{
+      slug: 'api',
+      name: 'api',
+      versions: [{
+        no: '1.0.0',
+        name: '1.0.0',
+        default: false,
+        depreciated: false,
+        draft: false,
+        docs: []
+      }]
+    }])
+
+    assert.deepEqual(added, [])
+    assert.deepEqual(updated, [{
+      slug: 'guides',
+      name: 'The Guides',
+      versions: {
+        updated: [],
+        removed: [{
+          no: '1.0.0',
+          name: '1.0.0',
+          default: false,
+          depreciated: false,
+          draft: false
+        }],
+        added: [{
+          no: '1.0.1',
+          name: '1.0.1',
+          default: true,
+          depreciated: false,
+          draft: false
+        }]
+      }
+    }])
+
+    assert.deepEqual(metaFile, {
+      zones: [{
+        slug: 'guides',
+        name: 'The Guides',
+        versions: [
+          {
+            no: '1.0.1',
+            name: '1.0.1',
+            default: true,
+            depreciated: false,
+            draft: false,
+            docs: []
+          }
+        ]
+      }]
+    })
+  })
+
+  test('return an array of zones', async (assert) => {
+    const store = new Datastore(ctx)
+    await store.db.load()
+
+    const nodes = {
+      type: 'root',
+      children: [{}]
+    }
+
+    await store.saveDoc('faq', '1.0.0', 'foo.md', {
+      title: 'Hello world',
+      permalink: '/hello',
+      content: nodes
+    })
+
+    const versions = store.getZones('faq')
+    assert.deepEqual(versions, [{
+      slug: 'faq',
+      name: 'faq',
+      versions: [
+        {
+          no: '1.0.0',
+          name: '1.0.0',
+          default: false,
+          depreciated: false,
+          draft: false,
+          heroDoc: {
+            jsonPath: 'foo.json',
+            title: 'Hello world',
+            permalink: '/hello',
+            category: 'root'
+          }
+        }
+      ]
+    }])
   })
 })

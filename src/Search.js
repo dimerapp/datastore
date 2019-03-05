@@ -44,17 +44,13 @@ class Search {
    *
    * @private
    */
-  _collectPositions (node) {
-    return _.reduce(node.matchData.metadata, (result, keyword) => {
-      if (keyword.title) {
-        result.title = result.title.concat(keyword.title.position)
-      }
-
-      if (keyword.body) {
-        result.body = result.body.concat(keyword.body.position)
+  _collectPositions (metadata) {
+    return _.reduce(metadata, (result, keyword) => {
+      if (keyword.content) {
+        result = result.concat(keyword.content.position)
       }
       return result
-    }, { title: [], body: [] })
+    }, [])
   }
 
   /**
@@ -71,15 +67,14 @@ class Search {
    * @private
    */
   _positionToMarks (positions, text) {
-    let lastIndex = 0
-
     /**
      * Return a single node when text is empty
      */
-    if (!text) {
+    if (!text || !positions || !positions.length) {
       return [{ type: 'raw', text }]
     }
 
+    let lastIndex = 0
     const marks = _.reduce(positions, (tokens, [start, end]) => {
       /**
        * First token will be raw
@@ -117,23 +112,49 @@ class Search {
    *
    * @method _nodeToMarks
    *
-   * @param  {Object}     node
-   * @param  {Object}     doc
+   * @return {Object}
+   *
+   * @private
+   */
+  _nodeToMarks (score, metadata, content) {
+    const positions = metadata ? this._collectPositions(metadata) : []
+
+    return {
+      score,
+      marks: this._positionToMarks(positions, content)
+    }
+  }
+
+  /**
+   * Returns the url and the nodeIndex for a given ref
+   *
+   * @method _getUrlAndNodeIndex
+   *
+   * @param  {String}            ref
    *
    * @return {Object}
    *
    * @private
    */
-  _nodeToMarks (node, doc) {
-    if (!doc) {
-      return { marks: null, ref: node.ref }
+  _getUrlAndNodeIndex (ref) {
+    const [url, nodeIndex] = ref.split('@lvl')
+    return { url, nodeIndex: Number(nodeIndex) }
+  }
+
+  /**
+   * Returns the attributes node
+   *
+   * @method _getAttributeNode
+   *
+   * @param  {Number}          score
+   *
+   * @return {Object}
+   */
+  _getAttributeNode (score) {
+    return {
+      score,
+      marks: []
     }
-
-    const { title, body } = this._collectPositions(node)
-    const titleMarks = this._positionToMarks(title, doc.title)
-    const bodyMarks = this._positionToMarks(body, doc.body)
-
-    return { marks: { title: titleMarks, body: bodyMarks }, ref: node.ref }
   }
 
   /**
@@ -254,25 +275,88 @@ class Search {
    */
   async search (indexPath, term, limit = 0) {
     const index = await this.load(indexPath)
+
     /**
      * Lazily revalidate the cache to drop invalid indexes
      * cache.
      */
     this.revalidate()
 
+    /**
+     * Invlid content inside the index file
+     */
     if (!index || !index.index || !index.docs) {
       return []
     }
 
-    let result = index.index.search(term)
-    if (limit) {
-      result = _.take(result, limit)
-    }
+    /**
+     * Remove other identifiers to improve search results
+     */
+    term = term.replace(/http(s)?:\/\//, '')
 
     /**
-     * Attach doc to the results node
+     * Removing lunrjs keywords, since we don't support user
+     * defined keywords for the search.
      */
-    return result.map((node) => this._nodeToMarks(node, index.docs[node.ref]))
+    term = term.replace(/[-+~^:*]/g, '')
+
+    try {
+      /**
+       * Some real shit happens here.
+       *
+       * The results returned by lunrjs is flat. However, we have nested documents inside
+       * each title. So we simply have to re-nest them.
+       */
+      const queryResults = _.transform(index.index.search(term), (result, node, key) => {
+        if (limit && key === limit) {
+          return false
+        }
+
+        const { url, nodeIndex } = this._getUrlAndNodeIndex(node.ref)
+        if (!result[url] && index.docs[url]) {
+          result[url] = {
+            doc: index.docs[url],
+            title: { score: 0, metadata: null, index: -1 },
+            matchData: []
+          }
+        }
+
+        if (result[url]) {
+          if (nodeIndex === 0) {
+            result[url].title = {
+              index: nodeIndex,
+              score: node.score,
+              metadata: node.matchData.metadata
+            }
+          } else {
+            result[url].matchData.push({
+              index: nodeIndex - 1,
+              score: node.score,
+              metadata: node.matchData.metadata
+            })
+          }
+        }
+
+        return result
+      }, {})
+
+      /**
+       * Here we process the nested documents and add highlighting marks to them.
+       */
+      return _.reduce(queryResults, (result, node) => {
+        result.push({
+          url: node.doc.url,
+          title: this._nodeToMarks(node.title.score, node.title.metadata, node.doc.title),
+          body: node.matchData.length ? _.map(node.matchData, ({ score, index, metadata }) => {
+            return this._nodeToMarks(score, metadata, node.doc.nodes[index])
+          }) : node.doc.nodes.length ? [this._nodeToMarks(0, null, node.doc.nodes[0])] : []
+        })
+
+        return result
+      }, [])
+    } catch (error) {
+      return []
+    }
   }
 }
 

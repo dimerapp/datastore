@@ -1,3 +1,100 @@
+<a name="3.0.3"></a>
+## [3.0.3](https://github.com/dimerapp/datastore/compare/v1.0.19...v3.0.3) (2019-03-05)
+
+
+### Bug Fixes
+
+* **datastore:** getVersions return null when parent zone is missing ([6ebdf94](https://github.com/dimerapp/datastore/commit/6ebdf94))
+* **search:** stop search from breaking when special chars are used ([f0be355](https://github.com/dimerapp/datastore/commit/f0be355))
+* **search-index:** fix typo raising runtime exception ([2893ae2](https://github.com/dimerapp/datastore/commit/2893ae2))
+
+
+### Code Refactoring
+
+* **search:** improve indexing to have shorter content text ([212bf53](https://github.com/dimerapp/datastore/commit/212bf53))
+* **search:** return segregated search results ([9ec65e9](https://github.com/dimerapp/datastore/commit/9ec65e9))
+
+
+### Features
+
+* **datastore:** implement getZones fn ([f8ad8b8](https://github.com/dimerapp/datastore/commit/f8ad8b8))
+* **db:** add support for zones inside db ([62eda3d](https://github.com/dimerapp/datastore/commit/62eda3d))
+* **search:** add support for multiple languages ([0b25bf1](https://github.com/dimerapp/datastore/commit/0b25bf1))
+* **zones:** add support to sync zones ([7f34b7e](https://github.com/dimerapp/datastore/commit/7f34b7e))
+* **zones:** make search and datastore to support zones ([68482d6](https://github.com/dimerapp/datastore/commit/68482d6))
+
+
+### BREAKING CHANGES
+
+* **search:** changes in the structure of search results
+* **search:** the index structure has been changed from title,body to just content
+
+
+
+<a name="3.0.2"></a>
+## [3.0.2](https://github.com/dimerapp/datastore/compare/v3.0.1...v3.0.2) (2018-11-20)
+
+
+### Features
+
+* **search:** add support for multiple languages ([0b25bf1](https://github.com/dimerapp/datastore/commit/0b25bf1))
+
+
+
+<a name="3.0.1"></a>
+## [3.0.1](https://github.com/dimerapp/datastore/compare/v3.0.0...v3.0.1) (2018-09-05)
+
+
+### Bug Fixes
+
+* **search:** stop search from breaking when special chars are used ([f0be355](https://github.com/dimerapp/datastore/commit/f0be355))
+
+
+
+<a name="3.0.0"></a>
+# [3.0.0](https://github.com/dimerapp/datastore/compare/v2.0.1...v3.0.0) (2018-09-04)
+
+
+### Code Refactoring
+
+* **search:** improve indexing to have shorter content text ([212bf53](https://github.com/dimerapp/datastore/commit/212bf53))
+* **search:** return segregated search results ([9ec65e9](https://github.com/dimerapp/datastore/commit/9ec65e9))
+
+
+### BREAKING CHANGES
+
+* **search:** changes in the structure of search results
+* **search:** the index structure has been changed from title,body to just content
+
+
+
+<a name="2.0.1"></a>
+## [2.0.1](https://github.com/dimerapp/datastore/compare/v2.0.0...v2.0.1) (2018-08-30)
+
+
+### Bug Fixes
+
+* **datastore:** getVersions return null when parent zone is missing ([6ebdf94](https://github.com/dimerapp/datastore/commit/6ebdf94))
+
+
+### Features
+
+* **datastore:** implement getZones fn ([f8ad8b8](https://github.com/dimerapp/datastore/commit/f8ad8b8))
+
+
+
+<a name="2.0.0"></a>
+# [2.0.0](https://github.com/dimerapp/datastore/compare/v1.0.19...v2.0.0) (2018-08-29)
+
+
+### Features
+
+* **db:** add support for zones inside db ([62eda3d](https://github.com/dimerapp/datastore/commit/62eda3d))
+* **zones:** add support to sync zones ([7f34b7e](https://github.com/dimerapp/datastore/commit/7f34b7e))
+* **zones:** make search and datastore to support zones ([68482d6](https://github.com/dimerapp/datastore/commit/68482d6))
+
+
+
 <a name="1.0.19"></a>
 ## [1.0.19](https://github.com/dimerapp/datastore/compare/v1.0.18...v1.0.19) (2018-08-03)
 

@@ -21,23 +21,41 @@ test.group('Db', (group) => {
     await fs.remove(dbFile)
   })
 
+  test('raise error when db is not loaded', async (assert) => {
+    const db = new Db(dbFile, { autoload: false })
+
+    const fns = Object
+      .getOwnPropertyNames(Db.prototype)
+      .filter((fn) => {
+        return !fn.startsWith('_') && ['constructor', 'isFileValid', 'load', 'persist'].indexOf(fn) === -1
+      })
+
+    for (let fn of fns) {
+      assert.throw(db[fn].bind(db), 'Wait for the db to be ready. Move your code inside the onReady callback')
+    }
+  })
+
   test('save version to the disk', async (assert) => {
     const db = new Db(dbFile)
     await db.load()
 
-    db.saveVersion({ no: '1.0.0' })
+    db.saveVersion('default', { no: '1.0.0' })
     await db.persist()
 
     const contents = await fs.readJSON(dbFile)
 
     assert.deepEqual(contents, {
-      versions: [{
-        no: '1.0.0',
-        name: '1.0.0',
-        default: false,
-        draft: false,
-        depreciated: false,
-        docs: []
+      zones: [{
+        name: 'default',
+        slug: 'default',
+        versions: [{
+          no: '1.0.0',
+          name: '1.0.0',
+          default: false,
+          draft: false,
+          depreciated: false,
+          docs: []
+        }]
       }]
     })
 
@@ -48,21 +66,27 @@ test.group('Db', (group) => {
     const db = new Db(dbFile)
     await db.load()
 
-    db.saveVersion({ no: '1.0.0' })
-    db.saveVersion({ no: '1.0.0', name: 'Version 1' })
+    db.saveVersion('guides', { no: '1.0.0' })
+    db.saveVersion('guides', { no: '1.0.0', name: 'Version 1' })
     await db.persist()
 
     const contents = await fs.readJSON(dbFile)
 
     assert.deepEqual(contents, {
-      versions: [{
-        no: '1.0.0',
-        name: 'Version 1',
-        default: false,
-        draft: false,
-        depreciated: false,
-        docs: []
-      }]
+      zones: [
+        {
+          slug: 'guides',
+          name: 'guides',
+          versions: [{
+            no: '1.0.0',
+            name: 'Version 1',
+            default: false,
+            draft: false,
+            depreciated: false,
+            docs: []
+          }]
+        }
+      ]
     })
 
     assert.isTrue(db.isFileValid())
@@ -72,7 +96,7 @@ test.group('Db', (group) => {
     const db = new Db(dbFile)
     await db.load()
 
-    db.addDoc('1.0.0', {
+    db.addDoc('guides', '1.0.0', {
       permalink: 'foo',
       jsonPath: 'foo.json',
       title: 'Hello foo',
@@ -83,20 +107,24 @@ test.group('Db', (group) => {
     const contents = await fs.readJSON(dbFile)
 
     assert.deepEqual(contents, {
-      versions: [{
-        no: '1.0.0',
-        name: '1.0.0',
-        default: false,
-        draft: false,
-        depreciated: false,
-        docs: [
-          {
-            permalink: 'foo',
-            jsonPath: 'foo.json',
-            title: 'Hello foo',
-            category: 'root'
-          }
-        ]
+      zones: [{
+        slug: 'guides',
+        name: 'guides',
+        versions: [{
+          no: '1.0.0',
+          name: '1.0.0',
+          default: false,
+          draft: false,
+          depreciated: false,
+          docs: [
+            {
+              permalink: 'foo',
+              jsonPath: 'foo.json',
+              title: 'Hello foo',
+              category: 'root'
+            }
+          ]
+        }]
       }]
     })
 
@@ -107,8 +135,8 @@ test.group('Db', (group) => {
     const db = new Db(dbFile)
     await db.load()
 
-    db.saveVersion({ no: '1.0.0', name: 'Version 1' })
-    db.addDoc('1.0.0', {
+    db.saveVersion('guides', { no: '1.0.0', name: 'Version 1' })
+    db.addDoc('guides', '1.0.0', {
       permalink: 'foo',
       jsonPath: 'foo.json',
       title: 'Hello foo',
@@ -119,20 +147,24 @@ test.group('Db', (group) => {
     const contents = await fs.readJSON(dbFile)
 
     assert.deepEqual(contents, {
-      versions: [{
-        no: '1.0.0',
-        name: 'Version 1',
-        default: false,
-        draft: false,
-        depreciated: false,
-        docs: [
-          {
-            permalink: 'foo',
-            jsonPath: 'foo.json',
-            title: 'Hello foo',
-            category: 'root'
-          }
-        ]
+      zones: [{
+        name: 'guides',
+        slug: 'guides',
+        versions: [{
+          no: '1.0.0',
+          name: 'Version 1',
+          default: false,
+          draft: false,
+          depreciated: false,
+          docs: [
+            {
+              permalink: 'foo',
+              jsonPath: 'foo.json',
+              title: 'Hello foo',
+              category: 'root'
+            }
+          ]
+        }]
       }]
     })
 
@@ -143,16 +175,16 @@ test.group('Db', (group) => {
     const db = new Db(dbFile)
     await db.load()
 
-    db.saveVersion({ no: '1.0.0', name: 'Version 1' })
+    db.saveVersion('guides', { no: '1.0.0', name: 'Version 1' })
 
-    db.addDoc('1.0.0', {
+    db.addDoc('guides', '1.0.0', {
       permalink: 'foo',
       jsonPath: 'foo.json',
       title: 'Hello foo',
       category: 'root'
     })
 
-    db.addDoc('1.0.0', {
+    db.addDoc('guides', '1.0.0', {
       permalink: 'bar',
       jsonPath: 'foo.json',
       title: 'Hi foo',
@@ -164,23 +196,35 @@ test.group('Db', (group) => {
     const contents = await fs.readJSON(dbFile)
 
     assert.deepEqual(contents, {
-      versions: [{
-        no: '1.0.0',
-        name: 'Version 1',
-        default: false,
-        draft: false,
-        depreciated: false,
-        docs: [
-          {
-            permalink: 'bar',
-            jsonPath: 'foo.json',
-            title: 'Hi foo',
-            category: 'root'
-          }
-        ]
+      zones: [{
+        name: 'guides',
+        slug: 'guides',
+        versions: [{
+          no: '1.0.0',
+          name: 'Version 1',
+          default: false,
+          draft: false,
+          depreciated: false,
+          docs: [
+            {
+              permalink: 'bar',
+              jsonPath: 'foo.json',
+              title: 'Hi foo',
+              category: 'root'
+            }
+          ]
+        }]
       }]
     })
 
+    assert.isTrue(db.isFileValid())
+  })
+
+  test('return null for versions when zone doesn\'t exists', async (assert) => {
+    const db = new Db(dbFile)
+    await db.load()
+
+    assert.isNull(db.getVersions('guides'))
     assert.isTrue(db.isFileValid())
   })
 
@@ -188,7 +232,8 @@ test.group('Db', (group) => {
     const db = new Db(dbFile)
     await db.load()
 
-    assert.deepEqual(db.getVersions(), [])
+    db.saveZone({ slug: 'guides' })
+    assert.deepEqual(db.getVersions('guides'), [])
     assert.isTrue(db.isFileValid())
   })
 
@@ -196,8 +241,8 @@ test.group('Db', (group) => {
     const db = new Db(dbFile)
     await db.load()
 
-    const version = await db.saveVersion({ no: '1.2' })
-    assert.deepEqual(db.getVersions(), [_.omit(version, ['docs'])])
+    const version = await db.saveVersion('guides', { no: '1.2' })
+    assert.deepEqual(db.getVersions('guides'), [_.omit(version, ['docs'])])
 
     assert.isTrue(db.isFileValid())
   })
@@ -205,15 +250,16 @@ test.group('Db', (group) => {
   test('load existing file from disk', async (assert) => {
     const db = new Db(dbFile, { autoload: false })
     await fs.outputJSON(dbFile, {
-      versions: [
-        {
+      zones: [{
+        slug: 'guides',
+        versions: [{
           no: '1.0.0'
-        }
-      ]
+        }]
+      }]
     })
 
     await db.load()
-    assert.deepEqual(db.getVersions(), [{
+    assert.deepEqual(db.getVersions('guides'), [{
       default: false,
       draft: false,
       depreciated: false,
@@ -227,20 +273,23 @@ test.group('Db', (group) => {
   test('remove version and it\'s docs', async (assert) => {
     const db = new Db(dbFile, { autoload: false })
     await fs.outputJSON(dbFile, {
-      versions: [
-        {
+      zones: [{
+        slug: 'guides',
+        versions: [{
           no: '1.0.0'
-        }
-      ]
+        }]
+      }]
     })
 
     await db.load()
-    db.removeVersion('1.0.0', true)
-    assert.deepEqual(db.getVersions(), [])
+    db.removeVersion('guides', '1.0.0')
+    assert.deepEqual(db.getVersions('guides'), [])
     await db.persist()
 
     const contents = await fs.readJSON(dbFile)
-    assert.deepEqual(contents, { versions: [] })
+    assert.deepEqual(contents, {
+      zones: [{ slug: 'guides', name: 'guides', versions: [] }]
+    })
 
     assert.isTrue(db.isFileValid())
   })
@@ -248,19 +297,23 @@ test.group('Db', (group) => {
   test('do not remove other versions', async (assert) => {
     const db = new Db(dbFile, { autoload: false })
     await fs.outputJSON(dbFile, {
-      versions: [
-        {
-          no: '1.0.0'
-        },
-        {
-          no: '1.0.1'
-        }
-      ]
+      zones: [{
+        slug: 'guides',
+        name: 'guides',
+        versions: [
+          {
+            no: '1.0.0'
+          },
+          {
+            no: '1.0.1'
+          }
+        ]
+      }]
     })
 
     await db.load()
-    db.removeVersion('1.0.0', true)
-    assert.deepEqual(db.getVersions(), [{
+    db.removeVersion('guides', '1.0.0')
+    assert.deepEqual(db.getVersions('guides'), [{
       default: false,
       draft: false,
       depreciated: false,
@@ -271,14 +324,20 @@ test.group('Db', (group) => {
     await db.persist()
 
     const contents = await fs.readJSON(dbFile)
-    assert.deepEqual(contents, { versions: [{
-      default: false,
-      draft: false,
-      depreciated: false,
-      no: '1.0.1',
-      name: '1.0.1',
-      docs: []
-    }] })
+    assert.deepEqual(contents, {
+      zones: [{
+        slug: 'guides',
+        name: 'guides',
+        versions: [{
+          default: false,
+          draft: false,
+          depreciated: false,
+          no: '1.0.1',
+          name: '1.0.1',
+          docs: []
+        }]
+      }]
+    })
 
     assert.isTrue(db.isFileValid())
   })
@@ -286,32 +345,42 @@ test.group('Db', (group) => {
   test('remove doc for a given version', async (assert) => {
     const db = new Db(dbFile, { autoload: false })
     await fs.outputJSON(dbFile, {
-      versions: [
-        {
-          no: '1.0.0',
-          docs: [
-            {
-              permalink: 'foo',
-              jsonPath: 'foo.json'
-            }
-          ]
-        }
-      ]
+      zones: [{
+        slug: 'guides',
+        name: 'guides',
+        versions: [
+          {
+            no: '1.0.0',
+            docs: [
+              {
+                permalink: 'foo',
+                jsonPath: 'foo.json'
+              }
+            ]
+          }
+        ]
+      }]
     })
 
     await db.load()
-    db.removeDoc('1.0.0', 'foo.json')
+    db.removeDoc('guides', '1.0.0', 'foo.json')
     await db.persist()
 
     const contents = await fs.readJSON(dbFile)
-    assert.deepEqual(contents, { versions: [{
-      default: false,
-      draft: false,
-      depreciated: false,
-      no: '1.0.0',
-      name: '1.0.0',
-      docs: []
-    }] })
+    assert.deepEqual(contents, {
+      zones: [{
+        name: 'guides',
+        slug: 'guides',
+        versions: [{
+          default: false,
+          draft: false,
+          depreciated: false,
+          no: '1.0.0',
+          name: '1.0.0',
+          docs: []
+        }]
+      }]
+    })
 
     assert.isTrue(db.isFileValid())
   })
@@ -319,31 +388,41 @@ test.group('Db', (group) => {
   test('skip when version doesn\'t exists', async (assert) => {
     const db = new Db(dbFile, { autoload: false })
     await fs.outputJSON(dbFile, {
-      versions: [
-        {
-          no: '1.0.0',
-          name: '1.0.0',
-          docs: [
-            {
-              permalink: 'foo',
-              jsonPath: 'foo.json',
-              category: 'root',
-              title: 'Foo'
-            }
-          ]
-        }
-      ]
+      zones: [{
+        slug: 'guides',
+        name: 'guides',
+        versions: [
+          {
+            no: '1.0.0',
+            name: '1.0.0',
+            docs: [
+              {
+                permalink: 'foo',
+                jsonPath: 'foo.json',
+                category: 'root',
+                title: 'Foo'
+              }
+            ]
+          }
+        ]
+      }]
     })
 
     await db.load()
-    await db.removeDoc('1.0.1', 'foo')
+    await db.removeDoc('guides', '1.0.1', 'foo')
 
     const contents = await fs.readJSON(dbFile)
-    assert.deepEqual(contents, { versions: [{
-      no: '1.0.0',
-      name: '1.0.0',
-      docs: [{ permalink: 'foo', jsonPath: 'foo.json', category: 'root', title: 'Foo' }]
-    }] })
+    assert.deepEqual(contents, {
+      zones: [{
+        slug: 'guides',
+        name: 'guides',
+        versions: [{
+          no: '1.0.0',
+          name: '1.0.0',
+          docs: [{ permalink: 'foo', jsonPath: 'foo.json', category: 'root', title: 'Foo' }]
+        }]
+      }]
+    })
 
     assert.isTrue(db.isFileValid())
   })
@@ -351,49 +430,67 @@ test.group('Db', (group) => {
   test('skip when doc doesn\'t exists', async (assert) => {
     const db = new Db(dbFile, { autoload: false })
     await fs.outputJSON(dbFile, {
-      versions: [
-        {
-          no: '1.0.0',
-          docs: [
-            {
-              permalink: 'foo'
-            }
-          ]
-        }
-      ]
+      zones: [{
+        slug: 'guides',
+        versions: [
+          {
+            no: '1.0.0',
+            docs: [
+              {
+                permalink: 'foo'
+              }
+            ]
+          }
+        ]
+      }]
     })
 
     await db.load()
-    await db.removeDoc('1.0.0', 'bar')
+    db.removeDoc('guides', '1.0.0', 'bar')
+    await db.persist()
 
     const contents = await fs.readJSON(dbFile)
-    assert.deepEqual(contents, { versions: [{
-      no: '1.0.0',
-      docs: [{ permalink: 'foo' }]
-    }] })
+    assert.deepEqual(contents, {
+      zones: [{
+        name: 'guides',
+        slug: 'guides',
+        versions: [{
+          no: '1.0.0',
+          name: '1.0.0',
+          default: false,
+          depreciated: false,
+          draft: false,
+          docs: [{ permalink: 'foo' }]
+        }]
+      }]
+    })
   })
 
   test('get a specific version', async (assert) => {
     const db = new Db(dbFile, { autoload: false })
     await fs.outputJSON(dbFile, {
-      versions: [
-        {
-          no: '1.0.0',
-          docs: [
-            {
-              permalink: 'foo',
-              title: 'Foo',
-              jsonPath: 'foo.json',
-              category: 'root'
-            }
-          ]
-        }
-      ]
+      zones: [{
+        slug: 'guides',
+        name: 'guides',
+        versions: [
+          {
+            no: '1.0.0',
+            docs: [
+              {
+                permalink: 'foo',
+                title: 'Foo',
+                jsonPath: 'foo.json',
+                category: 'root'
+              }
+            ]
+          }
+        ]
+      }]
     })
 
     await db.load()
 
-    assert.deepEqual(db.getVersion('1.0.0'), {
+    assert.deepEqual(db.getVersion('guides', '1.0.0'), {
       default: false,
       draft: false,
       depreciated: false,
@@ -415,44 +512,74 @@ test.group('Db', (group) => {
   test('return null when version is missing', async (assert) => {
     const db = new Db(dbFile, { autoload: false })
     await fs.outputJSON(dbFile, {
-      versions: [
-        {
-          no: '1.0.0',
-          docs: [
-            {
-              permalink: 'foo'
-            }
-          ]
-        }
-      ]
+      zones: [{
+        name: 'guides',
+        slug: 'guides',
+        versions: [
+          {
+            no: '1.0.0',
+            docs: [
+              {
+                permalink: 'foo'
+              }
+            ]
+          }
+        ]
+      }]
     })
 
     await db.load()
+    assert.isNull(db.getVersion('guides', '1.0.1'))
+  })
 
-    assert.isNull(db.getVersion('1.0.1'))
+  test('return null when zone is missing', async (assert) => {
+    const db = new Db(dbFile, { autoload: false })
+    await fs.outputJSON(dbFile, {
+      zones: [{
+        name: 'guides',
+        slug: 'guides',
+        versions: [
+          {
+            no: '1.0.0',
+            docs: [
+              {
+                permalink: 'foo'
+              }
+            ]
+          }
+        ]
+      }]
+    })
+
+    await db.load()
+    assert.isNull(db.getVersion('foo', '1.0.1'))
   })
 
   test('return a specific doc', async (assert) => {
     const db = new Db(dbFile, { autoload: false })
     await fs.outputJSON(dbFile, {
-      versions: [
-        {
-          no: '1.0.0',
-          docs: [
-            {
-              permalink: 'foo',
-              title: 'Foo',
-              jsonPath: 'foo.json',
-              category: 'root'
-            }
-          ]
-        }
-      ]
+      zones: [{
+        name: 'guides',
+        slug: 'guides',
+        versions: [
+          {
+            no: '1.0.0',
+            docs: [
+              {
+                permalink: 'foo',
+                title: 'Foo',
+                jsonPath: 'foo.json',
+                category: 'root'
+              }
+            ]
+          }
+        ]
+      }]
     })
 
     await db.load()
 
-    assert.deepEqual(db.getDocByPermalink('1.0.0', 'foo'), {
+    assert.deepEqual(db.getDocByPermalink('guides', '1.0.0', 'foo'), {
       permalink: 'foo',
       title: 'Foo',
       jsonPath: 'foo.json',
@@ -465,39 +592,47 @@ test.group('Db', (group) => {
   test('return null when version is missing', async (assert) => {
     const db = new Db(dbFile, { autoload: false })
     await fs.outputJSON(dbFile, {
-      versions: [
-        {
-          no: '1.0.0',
-          docs: [
-            {
-              permalink: 'foo'
-            }
-          ]
-        }
-      ]
+      zones: [{
+        slug: 'guides',
+        name: 'guides',
+        versions: [
+          {
+            no: '1.0.0',
+            docs: [
+              {
+                permalink: 'foo'
+              }
+            ]
+          }
+        ]
+      }]
     })
 
     await db.load()
-    assert.isNull(db.getDocByPermalink('1.0.1', 'foo'))
+    assert.isNull(db.getDocByPermalink('guides', '1.0.1', 'foo'))
   })
 
   test('return null when doc is missing', async (assert) => {
     const db = new Db(dbFile, { autoload: false })
     await fs.outputJSON(dbFile, {
-      versions: [
-        {
-          no: '1.0.0',
-          docs: [
-            {
-              permalink: 'foo'
-            }
-          ]
-        }
-      ]
+      zones: [{
+        name: 'guides',
+        slug: 'guides',
+        versions: [
+          {
+            no: '1.0.0',
+            docs: [
+              {
+                permalink: 'foo'
+              }
+            ]
+          }
+        ]
+      }]
     })
 
     await db.load()
-    assert.isNull(db.getDocByPermalink('1.0.0', 'bar'))
+    assert.isNull(db.getDocByPermalink('guides', '1.0.0', 'bar'))
   })
 
   test('return true from isFileValid when there are no versions', async (assert) => {
@@ -523,7 +658,7 @@ test.group('Db', (group) => {
     await fs.outputJSON(dbFile, {})
 
     await db.load()
-    await db.saveVersion({ no: '1.0.0' })
+    await db.saveVersion('guides', { no: '1.0.0' })
     assert.isTrue(db.isFileValid())
   })
 
@@ -532,8 +667,8 @@ test.group('Db', (group) => {
     await fs.outputJSON(dbFile, {})
 
     await db.load()
-    await db.saveVersion({ no: '1.0.0' })
-    await db.addDoc('1.0.0', { title: 'Hello', permalink: 'foo', category: 'root', jsonPath: 'foo.json' })
+    await db.saveVersion('guides', { no: '1.0.0' })
+    await db.addDoc('guides', '1.0.0', { title: 'Hello', permalink: 'foo', category: 'root', jsonPath: 'foo.json' })
     assert.isTrue(db.isFileValid())
   })
 
@@ -542,8 +677,8 @@ test.group('Db', (group) => {
     await fs.outputJSON(dbFile, {})
 
     await db.load()
-    await db.saveVersion({ no: '1.0.0' })
-    delete db.data.versions[0].no
+    await db.saveVersion('guides', { no: '1.0.0' })
+    delete db.data.zones[0].versions[0].no
     assert.isFalse(db.isFileValid())
   })
 
@@ -552,8 +687,8 @@ test.group('Db', (group) => {
     await fs.outputJSON(dbFile, {})
 
     await db.load()
-    await db.saveVersion({ no: '1.0.0' })
-    delete db.data.versions[0].docs
+    await db.saveVersion('guides', { no: '1.0.0' })
+    delete db.data.zones[0].versions[0].docs
     assert.isFalse(db.isFileValid())
   })
 
@@ -562,9 +697,9 @@ test.group('Db', (group) => {
     await fs.outputJSON(dbFile, {})
 
     await db.load()
-    await db.saveVersion({ no: '1.0.0' })
-    await db.addDoc('1.0.0', { title: 'Hello', permalink: 'foo', category: 'root', jsonPath: 'foo.json' })
-    delete db.data.versions[0].docs[0].permalink
+    await db.saveVersion('guides', { no: '1.0.0' })
+    await db.addDoc('guides', '1.0.0', { title: 'Hello', permalink: 'foo', category: 'root', jsonPath: 'foo.json' })
+    delete db.data.zones[0].versions[0].docs[0].permalink
 
     assert.isFalse(db.isFileValid())
   })
@@ -578,7 +713,7 @@ test.group('Db', (group) => {
 
     const contents = await fs.readJSON(dbFile)
 
-    assert.deepEqual(contents, { domain: 'foo', versions: [] })
+    assert.deepEqual(contents, { domain: 'foo', zones: [] })
   })
 
   test('remove properties which are not part of new meta data', async (assert) => {
@@ -591,11 +726,11 @@ test.group('Db', (group) => {
           joy: ':joy:'
         }
       },
-      versions: [
-        {
-          no: '1.0'
-        }
-      ]
+      zones: [{
+        name: 'guides',
+        slug: 'guides',
+        versions: [{ no: '1.0' }]
+      }]
     })
 
     await db.load()
@@ -618,7 +753,334 @@ test.group('Db', (group) => {
           smile: ':smile:'
         }
       },
-      versions: [{ no: '1.0', default: false, depreciated: false, draft: false, name: '1.0', docs: [] }]
+      zones: [{
+        name: 'guides',
+        slug: 'guides',
+        versions: [{
+          no: '1.0',
+          default: false,
+          depreciated: false,
+          draft: false,
+          name: '1.0',
+          docs: []
+        }]
+      }]
     })
+  })
+
+  test('save zone to the disk', async (assert) => {
+    const db = new Db(dbFile)
+    await db.load()
+
+    db.saveZone({ slug: 'default' })
+    await db.persist()
+
+    const contents = await fs.readJSON(dbFile)
+
+    assert.deepEqual(contents, {
+      zones: [{
+        slug: 'default',
+        name: 'default',
+        versions: []
+      }]
+    })
+
+    assert.isTrue(db.isFileValid())
+  })
+
+  test('update zone when already exists', async (assert) => {
+    const db = new Db(dbFile)
+    await db.load()
+
+    db.saveZone({ slug: 'default' })
+    await db.persist()
+
+    db.saveZone({ slug: 'default', name: 'The default' })
+    await db.persist()
+
+    const contents = await fs.readJSON(dbFile)
+    assert.deepEqual(contents, {
+      zones: [{
+        slug: 'default',
+        name: 'The default',
+        versions: []
+      }]
+    })
+
+    assert.isTrue(db.isFileValid())
+  })
+
+  test('add version for a given zone', async (assert) => {
+    const db = new Db(dbFile)
+    await db.load()
+
+    db.saveVersion('default', { no: '1.0.0' })
+    await db.persist()
+
+    const contents = await fs.readJSON(dbFile)
+    assert.deepEqual(contents, {
+      zones: [{
+        slug: 'default',
+        name: 'default',
+        versions: [{
+          no: '1.0.0',
+          name: '1.0.0',
+          default: false,
+          depreciated: false,
+          docs: [],
+          draft: false
+        }]
+      }]
+    })
+
+    assert.isTrue(db.isFileValid())
+  })
+
+  test('add version for existing zone', async (assert) => {
+    const db = new Db(dbFile)
+    await db.load()
+
+    db.saveZone({ slug: 'guides' })
+    db.saveVersion('guides', { no: '1.0.0' })
+    await db.persist()
+
+    const contents = await fs.readJSON(dbFile)
+    assert.deepEqual(contents, {
+      zones: [{
+        slug: 'guides',
+        name: 'guides',
+        versions: [{
+          no: '1.0.0',
+          name: '1.0.0',
+          default: false,
+          depreciated: false,
+          docs: [],
+          draft: false
+        }]
+      }]
+    })
+
+    assert.isTrue(db.isFileValid())
+  })
+
+  test('return null when doc is missing using getDoc function', async (assert) => {
+    const db = new Db(dbFile, { autoload: false })
+    await fs.outputJSON(dbFile, {
+      zones: [{
+        name: 'guides',
+        slug: 'guides',
+        versions: [
+          {
+            no: '1.0.0',
+            docs: [
+              {
+                permalink: 'foo'
+              }
+            ]
+          }
+        ]
+      }]
+    })
+
+    await db.load()
+    assert.isNull(db.getDoc('guides', '1.0.0', 'bar'))
+  })
+
+  test('return doc when it exists using getDoc function', async (assert) => {
+    const db = new Db(dbFile, { autoload: false })
+    await fs.outputJSON(dbFile, {
+      zones: [{
+        name: 'guides',
+        slug: 'guides',
+        versions: [
+          {
+            no: '1.0.0',
+            docs: [
+              {
+                permalink: 'foo',
+                jsonPath: 'foo.json'
+              }
+            ]
+          }
+        ]
+      }]
+    })
+
+    await db.load()
+    assert.deepEqual(db.getDoc('guides', '1.0.0', 'foo.json'), {
+      permalink: 'foo',
+      jsonPath: 'foo.json'
+    })
+  })
+
+  test('return null from getDoc when version is missing', async (assert) => {
+    const db = new Db(dbFile, { autoload: false })
+    await fs.outputJSON(dbFile, {
+      zones: [{
+        slug: 'guides',
+        name: 'guides',
+        versions: [
+          {
+            no: '1.0.0',
+            docs: [
+              {
+                permalink: 'foo',
+                jsonPath: 'foo.json'
+              }
+            ]
+          }
+        ]
+      }]
+    })
+
+    await db.load()
+    assert.isNull(db.getDoc('guides', '1.0.1', 'foo.json'))
+  })
+
+  test('removing version for non-existing zone should be noop', async (assert) => {
+    const db = new Db(dbFile, { autoload: false })
+    await fs.outputJSON(dbFile, {
+      zones: [{
+        slug: 'guides',
+        versions: [{
+          no: '1.0.0'
+        }]
+      }]
+    })
+
+    await db.load()
+    db.removeVersion('faq', '1.0.0')
+    await db.persist()
+
+    const contents = await fs.readJSON(dbFile)
+    assert.deepEqual(contents, {
+      zones: [{
+        slug: 'guides',
+        name: 'guides',
+        versions: [{
+          no: '1.0.0',
+          name: '1.0.0',
+          default: false,
+          depreciated: false,
+          draft: false,
+          docs: []
+        }]
+      }]
+    })
+
+    assert.isTrue(db.isFileValid())
+  })
+
+  test('return doc when its for the same version and has same permalink', async (assert) => {
+    const db = new Db(dbFile, { autoload: false })
+    await db.load()
+
+    db.addDoc('guides', '1.0.0', {
+      jsonPath: 'foo.json',
+      category: 'root',
+      permalink: 'foo',
+      title: 'Foo'
+    })
+
+    assert.deepEqual(db.findDuplicateDoc('guides', '1.0.0', 'foo', 'bar.json'), {
+      jsonPath: 'foo.json',
+      category: 'root',
+      permalink: 'foo',
+      title: 'Foo'
+    })
+  })
+
+  test('return null from findDuplicateDoc when jsonPath is same', async (assert) => {
+    const db = new Db(dbFile, { autoload: false })
+    await db.load()
+
+    db.addDoc('guides', '1.0.0', {
+      jsonPath: 'foo.json',
+      category: 'root',
+      permalink: 'foo',
+      title: 'Foo'
+    })
+
+    assert.isNull(db.findDuplicateDoc('guides', '1.0.0', 'foo', 'foo.json'))
+  })
+
+  test('return null from findDuplicateDoc when permalink is different', async (assert) => {
+    const db = new Db(dbFile, { autoload: false })
+    await db.load()
+
+    db.addDoc('guides', '1.0.0', {
+      jsonPath: 'foo.json',
+      category: 'root',
+      permalink: 'foo',
+      title: 'Foo'
+    })
+
+    assert.isNull(db.findDuplicateDoc('guides', '1.0.0', 'bar', 'bar.json'))
+  })
+
+  test('return null from findDuplicateDoc when version is different', async (assert) => {
+    const db = new Db(dbFile, { autoload: false })
+    await db.load()
+
+    db.addDoc('guides', '1.0.0', {
+      jsonPath: 'foo.json',
+      category: 'root',
+      permalink: 'foo',
+      title: 'Foo'
+    })
+
+    assert.isNull(db.findDuplicateDoc('guides', '1.0.1', 'foo', 'bar.json'))
+  })
+
+  test('return null from findDuplicateDoc when zone is different', async (assert) => {
+    const db = new Db(dbFile, { autoload: false })
+    await db.load()
+
+    db.addDoc('guides', '1.0.0', {
+      jsonPath: 'foo.json',
+      category: 'root',
+      permalink: 'foo',
+      title: 'Foo'
+    })
+
+    assert.isNull(db.findDuplicateDoc('faq', '1.0.0', 'foo', 'bar.json'))
+  })
+
+  test('return null from findDuplicateDoc when zone is different', async (assert) => {
+    const db = new Db(dbFile, { autoload: false })
+    await db.load()
+
+    db.addDoc('guides', '1.0.0', {
+      jsonPath: 'foo.json',
+      category: 'root',
+      permalink: 'foo',
+      title: 'Foo'
+    })
+
+    assert.isNull(db.findDuplicateDoc('faq', '1.0.0', 'foo', 'bar.json'))
+  })
+
+  test('remove zone and it\'s versions', async (assert) => {
+    const db = new Db(dbFile, { autoload: false })
+    await fs.outputJSON(dbFile, {
+      zones: [{
+        slug: 'guides',
+        versions: [{
+          no: '1.0.0'
+        }]
+      }]
+    })
+
+    await db.load()
+
+    db.removeZone('guides')
+    await db.persist()
+
+    const contents = await fs.readJSON(dbFile)
+    assert.deepEqual(contents, {
+      zones: []
+    })
+
+    assert.isTrue(db.isFileValid())
   })
 })

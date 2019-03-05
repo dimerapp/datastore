@@ -41,12 +41,21 @@ Site is a given website, with it's own domain.
 
 | Key | Value | Required | Description |
 |-----|-------|---------|--------------|
-| `domain` | String | YES | The domain of the website. If it's stored on dimer servers, then this is the subdomain `test.dimerapp.com` |
+| `domain` | String | NO | The domain of the website. If it's stored on dimer servers, then this is the subdomain `test.dimerapp.com` |
 | cname | String | NO | CNAME to dimer subdomain |
 | settings | Object | NO | An arbitrary object containing website settings. This is usually used by the themes |
 
+#### Zones
+Zones are the way to divide sections of your website docs into multiple top levels. For example: `Guides`, `API`, `FAQ's` and so on.
+
+| Key | Value | Required | Description |
+|-----|-------|----------|-------------|
+| slug **(unique)** | String | Yes | The slug to be used for uniquely identifying the zone. |
+| name | String | No | The display name for the zone |
+| versions | Array | Yes | The versions for the zone |
+
 #### Versions
-Each website has one or more versions of documentation.
+Versions for a given zone. When your are not using zones, then the versions become the part of a virtual zone.
 
 | Key | Value | Required | Description |
 |-----|-------|---------|--------------|
@@ -94,9 +103,10 @@ await store.load()
 await store.load(true)
 ```
 
-#### saveDoc(versionNo, filePath, doc)
+#### saveDoc(zoneSlug, versionNo, filePath, doc)
 Save a new doc to the datastore. 
 
+- The `slug` for the zone. If missing, it will be created on the fly.
 - If the version is missing, it will be created on the fly.
 - If `filePath` exists, the doc will be updated.
 - If `permalink `exists, an exception will be raised.
@@ -106,30 +116,43 @@ const markdown = new Markdown('# Hello world')
 const content = await markdown.toJSON()
 
 // save actual doc
-await store.saveDoc('1.0.0', 'introduction.md', {
-  permalink: 'introduction',
-  content: content
-})
+await store.saveDoc(
+  'guides',
+  '1.0.0',
+  'introduction.md',
+  {
+    permalink: 'introduction',
+    content: content
+  }
+)
 
 // update meta data to database
 await store.persist()
 ```
 
-#### removeDoc(versionNo, filePath)
+#### removeDoc(zoneSlug, versionNo, filePath)
 Remove doc from the store.
 
 ```js
-await store.removeDoc('1.0.0', 'introduction.md')
+await store.removeDoc('guides', '1.0.0', 'introduction.md')
 
 // update meta data to database
 await store.persist()
 ```
 
-#### syncVersions(versions)
+#### syncZones(zones)
+Syncs the zones inside the db. Also versions for each zone will be synced automatically. Each zone will have a diff node for versions too.
+
+```js
+const { added, updated, removed } = await store.syncZones(zones)
+console.log(added.versions) // { added: [], updated: [], removed: [] }
+```
+
+#### syncVersions(zoneSlug, versions)
 Sync an array of versions with the existing one's. Since all versions are saved inside the config `dimer.json` file, it is impossible to detect which version was added and which was removed to perform individual operations like `add`, `remove`. For the very same reason, datastore exposes the API to sync them.
 
 ```js
-await store.syncVersions([
+await store.syncVersions('guides', [
  {
    no: 'master',
    name: 'Version master',
@@ -150,14 +173,14 @@ await store.syncVersions([
 await store.persist()
 ```
 
-#### getVersions
+#### getVersions(zoneSlug)
 Returns an array of saved versions.
 
 ```js
-store.getVersions()
+store.getVersions('guides')
 ```
 
-#### getTree(versionNo, limit = 0, withContent = false, attachVersion = false)
+#### getTree(zoneSlug, versionNo, limit = 0, withContent = false, attachVersion = false)
 Get an array of all the docs. Ideally you want this array to create a navigation menu and then on each request, you can ask for the doc content. However...
 
 - You can pass `withContent=true` and the array will have the actual content for the doc too.
@@ -166,7 +189,7 @@ Get an array of all the docs. Ideally you want this array to create a navigation
 - When `attachVersion=true`. Each doc will contain it's version node.
 
 ```js
-const tree = await store.getTree('v4.0')
+const tree = await store.getTree('guides', 'v4.0')
 
 // output
 [
@@ -179,29 +202,29 @@ const tree = await store.getTree('v4.0')
 ]
 ```
 
-#### getDoc(versionNo, filePath, attachVersion = false)
+#### getDoc(zoneSlug, versionNo, filePath, attachVersion = false)
 Returns the doc meta data and it's content.
 
 - When `attachVersion=true`. Doc will contain it's version node.
 
 ```js
-const doc = await store.getDoc('v4.0', 'introduction.md')
+const doc = await store.getDoc('guides', 'v4.0', 'introduction.md')
 ```
 
-#### getDocByPermalink(versionNo, permalink, attachVersion = false)
+#### getDocByPermalink(zoneSlug, versionNo, permalink, attachVersion = false)
 Returns the doc by it's permalink.
 
 - When `attachVersion=true`. Doc will contain it's version node.
 
 ```js
-const doc = await store.getDocByPermalink('v4.0', '/introduction')
+const doc = await store.getDocByPermalink('guides', 'v4.0', '/introduction')
 ```
 
-#### redirectedPermalink(versionNo, permalink)
+#### redirectedPermalink(zoneSlug, versionNo, permalink)
 Returns the new permalink at which the doc must be redirected.
 
 ```js
-const redirectTo = store.redirectedPermalink('v4.0', '/old-introduction')
+const redirectTo = store.redirectedPermalink('guides', 'v4.0', '/old-introduction')
 
 if (redirectTo) {
   // redirect to this location
@@ -228,13 +251,13 @@ The datastore builds a search index based on [elasticlunr](http://elasticlunr.co
 **ALWAYS MAKE SURE TO CREATE SEARCH INDEXES AT LAST. SAVING A NEW DOC WILL NOT UPDATE THE INDEX**.
 
 ```js
-await store.indexVersion('v4.0')
+await store.indexVersion('guides', 'v4.0')
 ```
 
 And then later search
 
 ```js
-const results = await store.search('v4.0', 'What is AdonisJs?')
+const results = await store.search('guides', 'v4.0', 'Yaml')
 ```
 
 Following will be the output of search results
@@ -243,32 +266,71 @@ Following will be the output of search results
 [
   {
     ref: '/yaml-front-matter',
-    marks: {
-      body: [
+    title: {
+      score: 3.10,
+      marks: [
         {
           type: 'raw',
+          text: 'What is'
+        },
+        {
+          type: 'mark',
+          text: 'Yaml'
+        },
+        {
+          type: 'raw',
+          text: 'frontmatter'
+        }
+      ]
+    },
+    body: [
+      {
+        score: 2.984,
+        marks: [{
+          type: 'mark',
           text: 'Yaml '
         },
         {
-          type: 'mark',
-          text: 'front'
-        },
-        {
           type: 'raw',
-          text: ' '
-        },
-        {
-          type: 'mark',
-          text: 'matter'
-        },
-        {
-          type: 'raw',
-          text: ' is used for matching content'
-        }
-      ]
-    }
+          text: 'front matter is used for'
+        }]
+      }
+    ]
   }
 ]
+```
+
+### Search languages
+The datastore has support for multiple languages to create the search index. Following
+is the list of allowed and supported languages.
+
+English `en` is the default language.
+
+- da (Danish)
+- de (German)
+- du (Dutch)
+- es (Spanish)
+- fi (Finnish)
+- fr (French)
+- hu (Hungarian)
+- it (Italian)
+- ja (Japanese)
+- no (Norwegian)
+- pt (Portuguese)
+- ro (Romanian)
+- ru (Russian)
+- sv (Swedish)
+- th (Thai)
+- tr (Turkish)
+
+```js
+await store.indexVersion('guides', 'v4.0', 'de')
+```
+
+If your content is written in the mix of multiple languages, then you can pass an array of languages instead.
+
+```js
+await store.indexVersion('guides', 'v4.0', ['de', 'en'])
 ```
 
 ## Change log
@@ -284,8 +346,8 @@ Everyone is welcome to contribute. Please take a moment to review the [contribut
 
 MIT License, see the included [MIT](LICENSE.md) file.
 
-[travis-image]: https://img.shields.io/travis/dimerapp/md-serve/master.svg?style=flat-square&logo=travis
-[travis-url]: https://travis-ci.org/dimerapp/md-serve "travis"
+[travis-image]: https://img.shields.io/travis/dimerapp/datastore/master.svg?style=flat-square&logo=travis
+[travis-url]: https://travis-ci.org/dimerapp/datastore "travis"
 
-[npm-image]: https://img.shields.io/npm/v/md-serve.svg?style=flat-square&logo=npm
-[npm-url]: https://npmjs.org/package/md-serve "npm"
+[npm-image]: https://img.shields.io/npm/v/@dimerapp/datastore.svg?style=flat-square&logo=npm
+[npm-url]: https://npmjs.org/package/@dimerapp/datastore "npm"

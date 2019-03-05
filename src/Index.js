@@ -52,7 +52,7 @@ function loadLanguages (languages) {
    * Load basic multi-lingual stemmer and include it
    * only once
    */
-  if (this.loadedLanguages.length === 0) {
+  if (loadedLanguages.length === 0) {
     debug('loading stemmer')
     require('lunr-languages/lunr.stemmer.support')(lunr)
   }
